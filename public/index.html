@@ -1213,7 +1213,8 @@
 
         .table-header {
             display: grid;
-            grid-template-columns: 48px 80px 1fr 1fr 110px 100px 120px 80px;
+            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 70px;
+            gap: 12px;
             padding: 16px 20px;
             background: rgba(39, 39, 42, 0.5);
             font-weight: 600;
@@ -1225,7 +1226,8 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 48px 80px 1fr 1fr 110px 100px 120px 80px;
+            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 70px;
+            gap: 12px;
             padding: 16px 20px;
             border-bottom: 1px solid var(--border-light);
             align-items: center;
@@ -1250,7 +1252,7 @@
         }
 
         .inline-select {
-            padding: 6px 10px;
+            padding: 6px 8px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
             background: var(--bg-input);
@@ -1259,6 +1261,8 @@
             font-family: inherit;
             cursor: pointer;
             transition: var(--transition);
+            width: 100%;
+            min-width: 0;
         }
 
         .inline-select:hover {
@@ -1277,6 +1281,8 @@
 
         .inline-select.priority-select.high { color: var(--danger); }
         .inline-select.priority-select.medium { color: var(--warning); }
+
+        .inline-select.project-select { color: var(--text-primary); }
         .inline-select.priority-select.low { color: var(--info); }
 
         .task-checkbox {
