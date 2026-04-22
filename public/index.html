@@ -2798,6 +2798,11 @@
             currentEditTaskId = taskId ? parseInt(taskId) : null;
             document.getElementById('taskId').value = taskId ? String(taskId) : '';
 
+            console.log('=== OPEN TASK MODAL ===');
+            console.log('taskId param:', taskId);
+            console.log('currentEditTaskId set to:', currentEditTaskId);
+            console.log('Hidden input set to:', document.getElementById('taskId').value);
+
             if (taskId) {
                 const numId = parseInt(taskId);
                 const t = tasks.find(x => parseInt(x.id) === numId);
@@ -2835,7 +2840,14 @@
             e.preventDefault();
 
             // Use the JavaScript variable as the primary source, fall back to hidden input
-            const id = currentEditTaskId || document.getElementById('taskId').value;
+            const hiddenInputValue = document.getElementById('taskId').value;
+            const id = currentEditTaskId || hiddenInputValue;
+
+            console.log('=== TASK FORM SUBMIT ===');
+            console.log('currentEditTaskId:', currentEditTaskId);
+            console.log('hiddenInputValue:', hiddenInputValue);
+            console.log('Final id used:', id);
+            console.log('Will make:', id ? 'PUT (update)' : 'POST (create)');
 
             const assigneeValue = document.getElementById('taskAssignee').value;
             const data = {
@@ -2850,14 +2862,17 @@
             };
             try {
                 if (id) {
+                    console.log('Making PUT request to /tasks/' + id);
                     await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
                 } else {
+                    console.log('Making POST request to /tasks');
                     await api('/tasks', { method: 'POST', body: JSON.stringify(data) });
                 }
                 closeTaskModal();
                 await Promise.all([loadTasks(), loadStats()]);
                 showToast(id ? 'Task updated!' : 'Task created!', 'success');
             } catch (err) {
+                console.error('Task save error:', err);
                 showToast(err.message, 'error');
             }
         });
