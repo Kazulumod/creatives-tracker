@@ -83,6 +83,34 @@
                 linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
         }
 
+        [data-theme="light"] .sidebar {
+            background: #09090b;
+        }
+
+        [data-theme="light"] .sidebar-title {
+            color: #a1a1aa;
+        }
+
+        [data-theme="light"] .sidebar-item {
+            color: #fafafa;
+        }
+
+        [data-theme="light"] .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        [data-theme="light"] .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+            color: var(--accent);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        [data-theme="light"] .sidebar-item .badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fafafa;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-dark);
