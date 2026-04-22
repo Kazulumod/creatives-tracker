@@ -2900,8 +2900,9 @@
         }
 
         function editFromView() {
+            const taskIdToEdit = currentViewTaskId;  // Save ID before closing
             closeViewModal();
-            editTask(currentViewTaskId);
+            editTask(taskIdToEdit);
         }
 
         function editTask(id) {
