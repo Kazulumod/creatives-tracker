@@ -2878,10 +2878,15 @@
         });
 
         function viewTask(id) {
+            console.log('viewTask called with id:', id);
             const numId = parseInt(id);
             const t = tasks.find(x => parseInt(x.id) === numId);
-            if (!t) return;
+            if (!t) {
+                console.log('Task not found!');
+                return;
+            }
             currentViewTaskId = numId;
+            console.log('currentViewTaskId set to:', currentViewTaskId);
             document.getElementById('viewTaskKey').textContent = t.key;
             document.getElementById('viewTaskSummary').textContent = t.summary;
             document.getElementById('viewTaskDescription').textContent = t.description || 'No description';
