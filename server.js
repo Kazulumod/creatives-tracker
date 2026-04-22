@@ -10,6 +10,7 @@ const { OAuth2Client } = require('google-auth-library');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'creatives-tracker-secret-key-change-in-production';
+const INVITE_CODE = process.env.INVITE_CODE || 'CREATIVES2024';
 const DB_PATH = path.join(__dirname, 'creatives-tracker.db');
 
 // Google OAuth Client ID - Replace with your own from Google Cloud Console
@@ -166,7 +167,11 @@ const authenticate = (req, res, next) => {
 // Sign Up
 app.post('/api/auth/signup', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, inviteCode } = req.body;
+
+        if (!inviteCode || inviteCode !== INVITE_CODE) {
+            return res.status(403).json({ error: 'Invalid invite code. Contact your team admin.' });
+        }
 
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'Name, email, and password are required' });

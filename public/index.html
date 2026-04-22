@@ -1841,6 +1841,10 @@
             <div class="auth-error" id="signupError"></div>
             <form id="signupForm">
                 <div class="form-group">
+                    <label class="form-label">Invite Code</label>
+                    <input type="text" class="form-input" id="signupInviteCode" placeholder="Enter your team invite code" required>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Full Name</label>
                     <input type="text" class="form-input" id="signupName" placeholder="John Doe" required>
                 </div>
@@ -2324,6 +2328,7 @@
             const errorEl = document.getElementById('signupError');
             const password = document.getElementById('signupPassword').value;
             const confirm = document.getElementById('signupConfirm').value;
+            const inviteCode = document.getElementById('signupInviteCode').value;
 
             if (password !== confirm) {
                 errorEl.textContent = 'Passwords do not match';
@@ -2340,7 +2345,8 @@
                     body: JSON.stringify({
                         name: document.getElementById('signupName').value,
                         email: document.getElementById('signupEmail').value,
-                        password
+                        password,
+                        inviteCode
                     })
                 });
                 token = data.token;
