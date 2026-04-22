@@ -1234,6 +1234,14 @@
             color: var(--accent);
         }
 
+        .task-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+            padding-right: 16px;
+        }
+
         .task-summary {
             font-size: 14px;
             font-weight: 500;
@@ -1241,7 +1249,14 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            padding-right: 16px;
+        }
+
+        .task-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .task-row:hover .task-summary {
@@ -2045,7 +2060,7 @@
                         </select>
                     </div>
                     <div class="view-toggle">
-                        <button class="active" id="listViewBtn" onclick="setView('list')">
+                        <button id="listViewBtn" onclick="setView('list')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
                                 <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
@@ -2053,7 +2068,7 @@
                             </svg>
                             List
                         </button>
-                        <button id="boardViewBtn" onclick="setView('board')">
+                        <button class="active" id="boardViewBtn" onclick="setView('board')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                                 <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
@@ -2063,7 +2078,7 @@
                     </div>
                 </div>
 
-                <div class="list-view" id="listView">
+                <div class="list-view hidden" id="listView">
                     <div class="task-table">
                         <div class="table-header">
                             <span></span><span>ID</span><span>Task</span><span>Status</span>
@@ -2073,7 +2088,7 @@
                     </div>
                 </div>
 
-                <div class="board-view" id="boardView">
+                <div class="board-view active" id="boardView">
                     <div class="board-column">
                         <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--text-muted);"></span> To Do</span>
@@ -2335,7 +2350,7 @@
         let projects = [];
         let tasks = [];
         let teamMembers = [];
-        let currentView = 'list';
+        let currentView = 'board';
         let currentViewTaskId = null;
         let currentEditTaskId = null;  // Track task being edited
         let currentFilters = { status: 'all', priority: 'all', project: 'all', search: '' };
@@ -2750,11 +2765,16 @@
                     </div>`;
                 return;
             }
-            container.innerHTML = filtered.map(t => `
+            container.innerHTML = filtered.map(t => {
+                const desc = t.description ? escapeHtml(t.description).substring(0, 60) + (t.description.length > 60 ? '...' : '') : '';
+                return `
                 <div class="task-row" onclick="viewTask(${t.id})">
                     <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
                     <span class="task-key">${t.key}</span>
-                    <span class="task-summary">${escapeHtml(t.summary)}</span>
+                    <div class="task-content">
+                        <span class="task-summary">${escapeHtml(t.summary)}</span>
+                        ${desc ? `<span class="task-desc">${desc}</span>` : ''}
+                    </div>
                     <span class="status-badge ${t.status}"><span class="status-dot"></span>${getStatusLabel(t.status)}</span>
                     <span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)} ${capitalize(t.priority)}</span>
                     <span class="project-tag"><span class="dot" style="background:${t.project_color || '#84cc16'}"></span>${escapeHtml(t.project_name)}</span>
@@ -2762,7 +2782,8 @@
                         <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                         <button class="action-btn delete" onclick="event.stopPropagation(); deleteTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
 
         function renderBoardView(filtered) {
@@ -2778,9 +2799,11 @@
         }
 
         function createBoardCard(t) {
+            const desc = t.description ? escapeHtml(t.description).substring(0, 80) + (t.description.length > 80 ? '...' : '') : '';
             return `<div class="board-card" onclick="viewTask(${t.id})">
                 <div class="board-card-key">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
+                ${desc ? `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">${desc}</div>` : ''}
                 <div style="font-size: 11px; color: var(--accent); margin-bottom: 8px;">${escapeHtml(t.ministry || 'General')}</div>
                 <div class="board-card-footer">
                     <span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)}</span>
