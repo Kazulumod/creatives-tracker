@@ -2792,9 +2792,10 @@
         function openTaskModal(taskId = null) {
             document.getElementById('taskModal').classList.add('show');
             document.getElementById('taskModalTitle').textContent = taskId ? 'Edit Task' : 'Create Task';
-            document.getElementById('taskId').value = taskId || '';
+            document.getElementById('taskId').value = taskId ? String(taskId) : '';
             if (taskId) {
-                const t = tasks.find(x => x.id === taskId);
+                const numId = parseInt(taskId);
+                const t = tasks.find(x => parseInt(x.id) === numId);
                 if (t) {
                     document.getElementById('taskSummary').value = t.summary;
                     document.getElementById('taskDescription').value = t.description;
@@ -2804,6 +2805,8 @@
                     document.getElementById('taskAssignee').value = t.assignee_id || '';
                     document.getElementById('taskProject').value = t.project_id;
                     document.getElementById('taskDueDate').value = t.due_date || '';
+                } else {
+                    console.error('Task not found:', taskId);
                 }
             } else {
                 document.getElementById('taskSummary').value = '';
@@ -2850,9 +2853,10 @@
         });
 
         function viewTask(id) {
-            const t = tasks.find(x => x.id === id);
+            const numId = parseInt(id);
+            const t = tasks.find(x => parseInt(x.id) === numId);
             if (!t) return;
-            currentViewTaskId = id;
+            currentViewTaskId = numId;
             document.getElementById('viewTaskKey').textContent = t.key;
             document.getElementById('viewTaskSummary').textContent = t.summary;
             document.getElementById('viewTaskDescription').textContent = t.description || 'No description';
