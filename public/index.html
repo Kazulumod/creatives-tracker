@@ -2112,8 +2112,8 @@
                 <h2 class="modal-title" id="taskModalTitle">Create Task</h2>
                 <p class="modal-subtitle">Add a new task to your project</p>
             </div>
-            <input type="hidden" id="taskId">
             <form id="taskForm">
+                <input type="hidden" id="taskId" name="taskId">
                 <div class="form-group">
                     <label class="form-label">Task Title *</label>
                     <input type="text" class="form-input" id="taskSummary" placeholder="What needs to be done?" required>
@@ -2337,6 +2337,7 @@
         let teamMembers = [];
         let currentView = 'list';
         let currentViewTaskId = null;
+        let currentEditTaskId = null;  // Track task being edited
         let currentFilters = { status: 'all', priority: 'all', project: 'all', search: '' };
 
         // API Helper
@@ -2792,13 +2793,17 @@
         function openTaskModal(taskId = null) {
             document.getElementById('taskModal').classList.add('show');
             document.getElementById('taskModalTitle').textContent = taskId ? 'Edit Task' : 'Create Task';
+
+            // Store the task ID in both the hidden input AND the JavaScript variable
+            currentEditTaskId = taskId ? parseInt(taskId) : null;
             document.getElementById('taskId').value = taskId ? String(taskId) : '';
+
             if (taskId) {
                 const numId = parseInt(taskId);
                 const t = tasks.find(x => parseInt(x.id) === numId);
                 if (t) {
                     document.getElementById('taskSummary').value = t.summary;
-                    document.getElementById('taskDescription').value = t.description;
+                    document.getElementById('taskDescription').value = t.description || '';
                     document.getElementById('taskStatus').value = t.status;
                     document.getElementById('taskPriority').value = t.priority;
                     document.getElementById('taskMinistry').value = t.ministry || 'General';
@@ -2807,6 +2812,7 @@
                     document.getElementById('taskDueDate').value = t.due_date || '';
                 } else {
                     console.error('Task not found:', taskId);
+                    currentEditTaskId = null;
                 }
             } else {
                 document.getElementById('taskSummary').value = '';
@@ -2822,11 +2828,15 @@
 
         function closeTaskModal() {
             document.getElementById('taskModal').classList.remove('show');
+            currentEditTaskId = null;  // Clear the edit ID when closing
         }
 
         document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('taskId').value;
+
+            // Use the JavaScript variable as the primary source, fall back to hidden input
+            const id = currentEditTaskId || document.getElementById('taskId').value;
+
             const assigneeValue = document.getElementById('taskAssignee').value;
             const data = {
                 summary: document.getElementById('taskSummary').value,
