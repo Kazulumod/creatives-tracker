@@ -1213,7 +1213,7 @@
 
         .table-header {
             display: grid;
-            grid-template-columns: 48px 100px 1fr 140px 120px 140px 80px;
+            grid-template-columns: 48px 80px 1fr 1fr 110px 100px 120px 80px;
             padding: 16px 20px;
             background: rgba(39, 39, 42, 0.5);
             font-weight: 600;
@@ -1225,11 +1225,10 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 48px 100px 1fr 140px 120px 140px 80px;
+            grid-template-columns: 48px 80px 1fr 1fr 110px 100px 120px 80px;
             padding: 16px 20px;
             border-bottom: 1px solid var(--border-light);
             align-items: center;
-            cursor: pointer;
             transition: var(--transition);
         }
 
@@ -1238,8 +1237,47 @@
         }
 
         .task-row:hover {
-            background: rgba(132, 204, 22, 0.03);
+            background: rgba(239, 68, 68, 0.03);
         }
+
+        .task-desc-cell {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 12px;
+        }
+
+        .inline-select {
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .inline-select:hover {
+            border-color: var(--accent);
+        }
+
+        .inline-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .inline-select.status-select.todo { color: var(--text-secondary); }
+        .inline-select.status-select.progress { color: var(--warning); }
+        .inline-select.status-select.done { color: var(--success); }
+
+        .inline-select.priority-select.high { color: var(--danger); }
+        .inline-select.priority-select.medium { color: var(--warning); }
+        .inline-select.priority-select.low { color: var(--info); }
 
         .task-checkbox {
             width: 20px;
@@ -1264,14 +1302,11 @@
             font-weight: 600;
             font-size: 13px;
             color: var(--accent);
+            cursor: pointer;
         }
 
-        .task-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            overflow: hidden;
-            padding-right: 16px;
+        .task-key:hover {
+            text-decoration: underline;
         }
 
         .task-summary {
@@ -1281,17 +1316,11 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+            padding-right: 12px;
         }
 
-        .task-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .task-row:hover .task-summary {
+        .task-summary:hover {
             color: var(--accent);
         }
 
@@ -2113,7 +2142,7 @@
                 <div class="list-view hidden" id="listView">
                     <div class="task-table">
                         <div class="table-header">
-                            <span></span><span>ID</span><span>Task</span><span>Status</span>
+                            <span></span><span>ID</span><span>Task</span><span>Description</span><span>Status</span>
                             <span>Priority</span><span>Project</span><span></span>
                         </div>
                         <div id="taskList"></div>
@@ -2798,18 +2827,29 @@
                 return;
             }
             container.innerHTML = filtered.map(t => {
-                const desc = t.description ? escapeHtml(t.description).substring(0, 60) + (t.description.length > 60 ? '...' : '') : '';
+                const desc = t.description ? escapeHtml(t.description).substring(0, 40) + (t.description.length > 40 ? '...' : '') : '-';
+                const projectOptions = projects.map(p =>
+                    `<option value="${p.id}" ${p.id === t.project_id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+                ).join('');
                 return `
-                <div class="task-row" onclick="viewTask(${t.id})">
+                <div class="task-row">
                     <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
-                    <span class="task-key">${t.key}</span>
-                    <div class="task-content">
-                        <span class="task-summary">${escapeHtml(t.summary)}</span>
-                        ${desc ? `<span class="task-desc">${desc}</span>` : ''}
-                    </div>
-                    <span class="status-badge ${t.status}"><span class="status-dot"></span>${getStatusLabel(t.status)}</span>
-                    <span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)} ${capitalize(t.priority)}</span>
-                    <span class="project-tag"><span class="dot" style="background:${t.project_color || '#84cc16'}"></span>${escapeHtml(t.project_name)}</span>
+                    <span class="task-key" onclick="viewTask(${t.id})">${t.key}</span>
+                    <span class="task-summary" onclick="viewTask(${t.id})">${escapeHtml(t.summary)}</span>
+                    <span class="task-desc-cell" onclick="viewTask(${t.id})">${desc}</span>
+                    <select class="inline-select status-select ${t.status}" onchange="quickUpdateTask(${t.id}, 'status', this.value)">
+                        <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
+                        <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
+                    </select>
+                    <select class="inline-select priority-select ${t.priority}" onchange="quickUpdateTask(${t.id}, 'priority', this.value)">
+                        <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+                        <option value="medium" ${t.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+                    </select>
+                    <select class="inline-select project-select" onchange="quickUpdateTask(${t.id}, 'project_id', this.value)">
+                        ${projectOptions}
+                    </select>
                     <div class="task-actions">
                         <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                         <button class="action-btn delete" onclick="event.stopPropagation(); deleteTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
@@ -2962,6 +3002,22 @@
             try {
                 await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ status: status === 'done' ? 'todo' : 'done' }) });
                 await Promise.all([loadTasks(), loadStats()]);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function quickUpdateTask(id, field, value) {
+            try {
+                const data = {};
+                if (field === 'project_id') {
+                    data[field] = parseInt(value);
+                } else {
+                    data[field] = value;
+                }
+                await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+                await Promise.all([loadTasks(), loadStats()]);
+                showToast('Task updated', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
             }
