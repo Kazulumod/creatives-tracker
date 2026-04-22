@@ -2835,8 +2835,9 @@
             container.innerHTML = filtered.map(t => {
                 const desc = t.description ? escapeHtml(t.description).substring(0, 40) + (t.description.length > 40 ? '...' : '') : '-';
                 const projectOptions = projects.map(p =>
-                    `<option value="${p.id}" ${p.id === t.project_id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+                    `<option value="${p.id}" ${parseInt(p.id) === parseInt(t.project_id) ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
                 ).join('');
+                const currentProjectName = t.project_name || 'Select Project';
                 return `
                 <div class="task-row">
                     <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
@@ -2854,7 +2855,7 @@
                         <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
                     </select>
                     <select class="inline-select project-select" onchange="quickUpdateTask(${t.id}, 'project_id', this.value)">
-                        ${projectOptions}
+                        ${projectOptions || `<option value="${t.project_id}">${escapeHtml(t.project_name)}</option>`}
                     </select>
                     <div class="task-actions">
                         <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
