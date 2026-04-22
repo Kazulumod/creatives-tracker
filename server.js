@@ -40,9 +40,20 @@ async function initDatabase() {
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 color TEXT DEFAULT '#6366f1',
+                ministry TEXT DEFAULT 'General',
                 owner_id INTEGER NOT NULL REFERENCES users(id),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        `);
+
+        // Add ministry column if it doesn't exist (for existing databases)
+        await client.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='ministry') THEN
+                    ALTER TABLE projects ADD COLUMN ministry TEXT DEFAULT 'General';
+                END IF;
+            END $$;
         `);
 
         await client.query(`
@@ -239,15 +250,15 @@ app.get('/api/projects', authenticate, async (req, res) => {
 // Create project
 app.post('/api/projects', authenticate, async (req, res) => {
     try {
-        const { name, color } = req.body;
+        const { name, color, ministry } = req.body;
 
         if (!name) {
             return res.status(400).json({ error: 'Project name is required' });
         }
 
         const projResult = await pool.query(
-            'INSERT INTO projects (name, color, owner_id) VALUES ($1, $2, $3) RETURNING *',
-            [name, color || '#6366f1', req.user.id]
+            'INSERT INTO projects (name, color, ministry, owner_id) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, color || '#6366f1', ministry || 'General', req.user.id]
         );
         const project = projResult.rows[0];
 

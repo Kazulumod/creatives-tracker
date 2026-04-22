@@ -2171,6 +2171,20 @@
                     <input type="text" class="form-input" id="projectName" placeholder="My Project" required>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Ministry *</label>
+                    <select class="form-input" id="projectMinistry" required>
+                        <option value="">Select Ministry</option>
+                        <option value="General">General</option>
+                        <option value="Sunday">Sunday</option>
+                        <option value="Community Bible Study">Community Bible Study</option>
+                        <option value="Young Adults">Young Adults</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Citichamps">Citichamps</option>
+                        <option value="Young Couples">Young Couples</option>
+                        <option value="Events">Events</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Assign To</label>
                     <select class="form-input" id="projectAssignee">
                         <option value="">Select team member (optional)</option>
@@ -2434,7 +2448,10 @@
                 <div class="sidebar-item project-item" onclick="filterByProject(${p.id}, this)">
                     <div class="project-item-left">
                         <div class="project-icon" style="background: ${p.color};">${p.name.charAt(0).toUpperCase()}</div>
-                        <span>${escapeHtml(p.name)}</span>
+                        <div style="display: flex; flex-direction: column;">
+                            <span>${escapeHtml(p.name)}</span>
+                            <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(p.ministry || 'General')}</span>
+                        </div>
                     </div>
                     ${p.role === 'owner' ? `
                         <button class="share-btn" onclick="event.stopPropagation(); openShareModal(${p.id}, '${escapeHtml(p.name)}')" title="Share">
@@ -2458,6 +2475,7 @@
         function openProjectModal() {
             document.getElementById('projectModal').classList.add('show');
             document.getElementById('projectName').value = '';
+            document.getElementById('projectMinistry').value = '';
             document.getElementById('projectColor').value = '#84cc16';
             document.getElementById('projectAssignee').value = '';
         }
@@ -2474,6 +2492,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         name: document.getElementById('projectName').value,
+                        ministry: document.getElementById('projectMinistry').value,
                         color: document.getElementById('projectColor').value
                     })
                 });
