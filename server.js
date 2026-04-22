@@ -75,6 +75,7 @@ async function initDatabase() {
                 description TEXT DEFAULT '',
                 status TEXT DEFAULT 'todo',
                 priority TEXT DEFAULT 'medium',
+                ministry TEXT DEFAULT 'General',
                 project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
                 assignee_id INTEGER REFERENCES users(id),
                 creator_id INTEGER NOT NULL REFERENCES users(id),
@@ -82,6 +83,16 @@ async function initDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        `);
+
+        // Add ministry column to tasks if it doesn't exist
+        await client.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='ministry') THEN
+                    ALTER TABLE tasks ADD COLUMN ministry TEXT DEFAULT 'General';
+                END IF;
+            END $$;
         `);
 
         await client.query(`
@@ -433,7 +444,7 @@ app.get('/api/tasks', authenticate, async (req, res) => {
 // Create task
 app.post('/api/tasks', authenticate, async (req, res) => {
     try {
-        const { summary, description, status, priority, project_id, assignee_id, due_date } = req.body;
+        const { summary, description, status, priority, ministry, project_id, assignee_id, due_date } = req.body;
 
         if (!summary || !project_id) {
             return res.status(400).json({ error: 'Summary and project are required' });
@@ -456,14 +467,15 @@ app.post('/api/tasks', authenticate, async (req, res) => {
         const taskKey = `${prefix}-${newCounter}`;
 
         const taskResult = await pool.query(`
-            INSERT INTO tasks (key, summary, description, status, priority, project_id, assignee_id, creator_id, due_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+            INSERT INTO tasks (key, summary, description, status, priority, ministry, project_id, assignee_id, creator_id, due_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
         `, [
             taskKey,
             summary,
             description || '',
             status || 'todo',
             priority || 'medium',
+            ministry || 'General',
             project_id,
             assignee_id || null,
             req.user.id,
@@ -493,7 +505,7 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 app.put('/api/tasks/:id', authenticate, async (req, res) => {
     try {
         const taskId = req.params.id;
-        const { summary, description, status, priority, assignee_id, due_date } = req.body;
+        const { summary, description, status, priority, ministry, assignee_id, due_date } = req.body;
 
         const taskCheck = await pool.query(`
             SELECT t.* FROM tasks t
@@ -513,15 +525,17 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                 description = COALESCE($2, description),
                 status = COALESCE($3, status),
                 priority = COALESCE($4, priority),
-                assignee_id = $5,
-                due_date = $6,
+                ministry = COALESCE($5, ministry),
+                assignee_id = $6,
+                due_date = $7,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $7
+            WHERE id = $8
         `, [
             summary,
             description,
             status,
             priority,
+            ministry,
             assignee_id !== undefined ? assignee_id : task.assignee_id,
             due_date !== undefined ? due_date : task.due_date,
             taskId

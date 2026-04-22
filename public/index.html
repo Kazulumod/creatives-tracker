@@ -2101,6 +2101,20 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Ministry *</label>
+                    <select class="form-input" id="taskMinistry" required>
+                        <option value="">Select Ministry</option>
+                        <option value="General">General</option>
+                        <option value="Sunday">Sunday</option>
+                        <option value="Community Bible Study">Community Bible Study</option>
+                        <option value="Young Adults">Young Adults</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Citichamps">Citichamps</option>
+                        <option value="Young Couples">Young Couples</option>
+                        <option value="Events">Events</option>
+                    </select>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Project</label>
@@ -2677,6 +2691,7 @@
             return `<div class="board-card" onclick="viewTask(${t.id})">
                 <div class="board-card-key">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
+                <div style="font-size: 11px; color: var(--accent); margin-bottom: 8px;">${escapeHtml(t.ministry || 'General')}</div>
                 <div class="board-card-footer">
                     <span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)}</span>
                     <div class="board-card-avatar">${getInitials(t.assignee_name || currentUser.name)}</div>
@@ -2696,6 +2711,7 @@
                     document.getElementById('taskDescription').value = t.description;
                     document.getElementById('taskStatus').value = t.status;
                     document.getElementById('taskPriority').value = t.priority;
+                    document.getElementById('taskMinistry').value = t.ministry || 'General';
                     document.getElementById('taskProject').value = t.project_id;
                     document.getElementById('taskDueDate').value = t.due_date || '';
                 }
@@ -2704,6 +2720,7 @@
                 document.getElementById('taskDescription').value = '';
                 document.getElementById('taskStatus').value = 'todo';
                 document.getElementById('taskPriority').value = 'medium';
+                document.getElementById('taskMinistry').value = '';
                 if (projects.length) document.getElementById('taskProject').value = projects[0].id;
                 document.getElementById('taskDueDate').value = '';
             }
@@ -2721,6 +2738,7 @@
                 description: document.getElementById('taskDescription').value,
                 status: document.getElementById('taskStatus').value,
                 priority: document.getElementById('taskPriority').value,
+                ministry: document.getElementById('taskMinistry').value,
                 project_id: parseInt(document.getElementById('taskProject').value),
                 due_date: document.getElementById('taskDueDate').value || null
             };
