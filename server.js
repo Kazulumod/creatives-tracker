@@ -4,11 +4,66 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'creatives-tracker-secret-key-change-in-production';
 const INVITE_CODE = process.env.INVITE_CODE || 'CREATIVES2026';
+
+// Email Configuration
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Creatives Tracker <noreply@creativestracker.com>';
+
+let transporter = null;
+if (EMAIL_USER && EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+        }
+    });
+}
+
+// Send assignment notification email
+async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, taskKey, assignerName) {
+    if (!transporter) {
+        console.log('Email not configured - skipping notification');
+        return;
+    }
+
+    try {
+        await transporter.sendMail({
+            from: EMAIL_FROM,
+            to: assigneeEmail,
+            subject: `[${taskKey}] You've been assigned a task`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: #84cc16; padding: 20px; text-align: center;">
+                        <h1 style="color: #09090b; margin: 0;">Creatives Tracker</h1>
+                    </div>
+                    <div style="padding: 30px; background: #f8f8f8;">
+                        <h2 style="color: #333;">Hi ${assigneeName},</h2>
+                        <p style="color: #666; font-size: 16px;">You've been assigned a new task by <strong>${assignerName}</strong>:</p>
+                        <div style="background: white; border-left: 4px solid #84cc16; padding: 20px; margin: 20px 0;">
+                            <p style="margin: 0; color: #888; font-size: 12px;">${taskKey}</p>
+                            <h3 style="margin: 8px 0 0 0; color: #333;">${taskSummary}</h3>
+                        </div>
+                        <a href="https://creatives-tracker.onrender.com" style="display: inline-block; background: #84cc16; color: #09090b; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Task</a>
+                    </div>
+                    <div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
+                        Creatives Tracker - Manage Your Projects Effortlessly
+                    </div>
+                </div>
+            `
+        });
+        console.log(`Assignment email sent to ${assigneeEmail}`);
+    } catch (err) {
+        console.error('Failed to send email:', err);
+    }
+}
 
 // PostgreSQL Connection
 const pool = new Pool({
@@ -486,7 +541,8 @@ app.post('/api/tasks', authenticate, async (req, res) => {
         const fullTaskResult = await pool.query(`
             SELECT t.*, p.name as project_name, p.color as project_color,
                    creator.name as creator_name,
-                   assignee.name as assignee_name
+                   assignee.name as assignee_name,
+                   assignee.email as assignee_email
             FROM tasks t
             JOIN projects p ON t.project_id = p.id
             JOIN users creator ON t.creator_id = creator.id
@@ -494,7 +550,16 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             WHERE t.id = $1
         `, [taskId]);
 
-        res.status(201).json(fullTaskResult.rows[0]);
+        const task = fullTaskResult.rows[0];
+
+        // Send email notification if task is assigned
+        if (assignee_id && task.assignee_email) {
+            const creatorResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+            const assignerName = creatorResult.rows[0]?.name || 'Someone';
+            sendAssignmentEmail(task.assignee_email, task.assignee_name, summary, taskKey, assignerName);
+        }
+
+        res.status(201).json(task);
     } catch (err) {
         console.error('Create task error:', err);
         res.status(500).json({ error: 'Server error' });
@@ -544,7 +609,8 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
         const updatedResult = await pool.query(`
             SELECT t.*, p.name as project_name, p.color as project_color,
                    creator.name as creator_name,
-                   assignee.name as assignee_name
+                   assignee.name as assignee_name,
+                   assignee.email as assignee_email
             FROM tasks t
             JOIN projects p ON t.project_id = p.id
             JOIN users creator ON t.creator_id = creator.id
@@ -552,7 +618,17 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
             WHERE t.id = $1
         `, [taskId]);
 
-        res.json(updatedResult.rows[0]);
+        const updatedTask = updatedResult.rows[0];
+
+        // Send email if assignee changed and new assignee is set
+        const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
+        if (newAssigneeId && newAssigneeId !== task.assignee_id && updatedTask.assignee_email) {
+            const assignerResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+            const assignerName = assignerResult.rows[0]?.name || 'Someone';
+            sendAssignmentEmail(updatedTask.assignee_email, updatedTask.assignee_name, updatedTask.summary, updatedTask.key, assignerName);
+        }
+
+        res.json(updatedTask);
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }

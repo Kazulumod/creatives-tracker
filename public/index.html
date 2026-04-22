@@ -2509,13 +2509,17 @@
             const inviteSelect = document.getElementById('inviteUserSelect');
             const taskAssignee = document.getElementById('taskAssignee');
 
-            const options = teamMembers.map(u =>
+            const optionsWithEmail = teamMembers.map(u =>
                 `<option value="${u.id}" data-email="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
             ).join('');
 
-            projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + options;
-            inviteSelect.innerHTML = '<option value="">Select a team member</option>' + options;
-            taskAssignee.innerHTML = '<option value="">Unassigned</option>' + options;
+            const optionsNameOnly = teamMembers.map(u =>
+                `<option value="${u.id}">${escapeHtml(u.name)}</option>`
+            ).join('');
+
+            projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + optionsNameOnly;
+            inviteSelect.innerHTML = '<option value="">Select a team member</option>' + optionsWithEmail;
+            taskAssignee.innerHTML = '<option value="">Unassigned</option>' + optionsNameOnly;
         }
 
         // Check Auth
