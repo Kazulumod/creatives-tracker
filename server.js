@@ -660,6 +660,23 @@ app.get('/api/stats', authenticate, (req, res) => {
     res.json(result || { total: 0, todo: 0, progress: 0, done: 0 });
 });
 
+// ============== ADMIN STATS ==============
+
+app.get('/api/admin/stats', (req, res) => {
+    const adminKey = req.query.key;
+    if (adminKey !== INVITE_CODE) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const users = dbAll('SELECT id, name, email, created_at FROM users ORDER BY created_at DESC');
+    const userCount = users.length;
+
+    res.json({
+        totalUsers: userCount,
+        users: users
+    });
+});
+
 // ============== SEARCH USERS ==============
 
 app.get('/api/users/search', authenticate, (req, res) => {
