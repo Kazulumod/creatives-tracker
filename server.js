@@ -619,6 +619,16 @@ app.get('/api/users/search', authenticate, async (req, res) => {
     }
 });
 
+// Get all team members (for dropdowns)
+app.get('/api/users/all', authenticate, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, email FROM users ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Serve frontend
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));

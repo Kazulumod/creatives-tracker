@@ -2171,6 +2171,12 @@
                     <input type="text" class="form-input" id="projectName" placeholder="My Project" required>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Assign To</label>
+                    <select class="form-input" id="projectAssignee">
+                        <option value="">Select team member (optional)</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Color</label>
                     <input type="color" class="form-input" id="projectColor" value="#84cc16" style="height: 50px; padding: 8px;">
                 </div>
@@ -2193,14 +2199,13 @@
             </div>
             <input type="hidden" id="shareProjectId">
             <div class="form-group">
-                <label class="form-label">Invite by email</label>
+                <label class="form-label">Add Team Member</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="email" class="form-input" id="inviteEmail" placeholder="colleague@example.com" style="flex: 1;">
-                    <button class="btn btn-primary" type="button" onclick="inviteMember()">Invite</button>
+                    <select class="form-input" id="inviteUserSelect" style="flex: 1;">
+                        <option value="">Select a team member</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="inviteMemberFromDropdown()">Add</button>
                 </div>
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                    The person must have a Creatives Tracker account
-                </p>
             </div>
             <div class="member-list">
                 <label class="form-label">Team Members</label>
@@ -2218,6 +2223,7 @@
         let token = localStorage.getItem('ct_token');
         let projects = [];
         let tasks = [];
+        let teamMembers = [];
         let currentView = 'list';
         let currentViewTaskId = null;
         let currentFilters = { status: 'all', priority: 'all', project: 'all', search: '' };
@@ -2374,7 +2380,29 @@
             document.getElementById('landingPage').style.display = 'none';
             document.getElementById('appContainer').classList.add('active');
 
-            await Promise.all([loadProjects(), loadTasks(), loadStats()]);
+            await Promise.all([loadProjects(), loadTasks(), loadStats(), loadTeamMembers()]);
+        }
+
+        // Load all team members for dropdowns
+        async function loadTeamMembers() {
+            try {
+                teamMembers = await api('/users/all');
+                updateTeamMemberDropdowns();
+            } catch (err) {
+                console.error('Failed to load team members:', err);
+            }
+        }
+
+        function updateTeamMemberDropdowns() {
+            const projectAssignee = document.getElementById('projectAssignee');
+            const inviteSelect = document.getElementById('inviteUserSelect');
+
+            const options = teamMembers.map(u =>
+                `<option value="${u.id}" data-email="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
+            ).join('');
+
+            projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + options;
+            inviteSelect.innerHTML = '<option value="">Select a team member</option>' + options;
         }
 
         // Check Auth
@@ -2431,6 +2459,7 @@
             document.getElementById('projectModal').classList.add('show');
             document.getElementById('projectName').value = '';
             document.getElementById('projectColor').value = '#84cc16';
+            document.getElementById('projectAssignee').value = '';
         }
 
         function closeProjectModal() {
@@ -2440,13 +2469,26 @@
         document.getElementById('projectForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             try {
-                await api('/projects', {
+                const assigneeId = document.getElementById('projectAssignee').value;
+                const project = await api('/projects', {
                     method: 'POST',
                     body: JSON.stringify({
                         name: document.getElementById('projectName').value,
                         color: document.getElementById('projectColor').value
                     })
                 });
+
+                // If assignee selected, invite them to the project
+                if (assigneeId && assigneeId !== currentUser.id.toString()) {
+                    const selectedUser = teamMembers.find(u => u.id.toString() === assigneeId);
+                    if (selectedUser) {
+                        await api(`/projects/${project.id}/invite`, {
+                            method: 'POST',
+                            body: JSON.stringify({ email: selectedUser.email })
+                        });
+                    }
+                }
+
                 closeProjectModal();
                 await loadProjects();
                 showToast('Project created!', 'success');
@@ -2460,8 +2502,9 @@
             document.getElementById('shareModal').classList.add('show');
             document.getElementById('shareModalTitle').textContent = `Share "${projectName}"`;
             document.getElementById('shareProjectId').value = projectId;
-            document.getElementById('inviteEmail').value = '';
+            document.getElementById('inviteUserSelect').value = '';
             loadProjectMembers(projectId);
+            updateInviteDropdown(projectId);
         }
 
         function closeShareModal() {
@@ -2483,24 +2526,48 @@
                         <span class="member-role ${m.role}">${m.role}</span>
                     </div>
                 `).join('');
+
+                // Update dropdown to exclude existing members
+                updateInviteDropdown(projectId, members);
             } catch (err) {
                 showToast('Failed to load members', 'error');
             }
         }
 
-        async function inviteMember() {
-            const email = document.getElementById('inviteEmail').value.trim();
+        function updateInviteDropdown(projectId, existingMembers = []) {
+            const inviteSelect = document.getElementById('inviteUserSelect');
+            const memberIds = existingMembers.map(m => m.id);
+
+            // Filter out users who are already members
+            const availableUsers = teamMembers.filter(u => !memberIds.includes(u.id));
+
+            inviteSelect.innerHTML = '<option value="">Select a team member</option>' +
+                availableUsers.map(u =>
+                    `<option value="${u.id}" data-email="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
+                ).join('');
+        }
+
+        async function inviteMemberFromDropdown() {
+            const select = document.getElementById('inviteUserSelect');
+            const userId = select.value;
             const projectId = document.getElementById('shareProjectId').value;
-            if (!email) return;
+
+            if (!userId) {
+                showToast('Please select a team member', 'error');
+                return;
+            }
+
+            const selectedUser = teamMembers.find(u => u.id.toString() === userId);
+            if (!selectedUser) return;
 
             try {
                 await api(`/projects/${projectId}/invite`, {
                     method: 'POST',
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email: selectedUser.email })
                 });
-                document.getElementById('inviteEmail').value = '';
+                select.value = '';
                 await loadProjectMembers(projectId);
-                showToast('Member invited!', 'success');
+                showToast('Member added!', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
             }
