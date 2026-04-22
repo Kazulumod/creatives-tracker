@@ -2140,19 +2140,27 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Ministry *</label>
-                    <select class="form-input" id="taskMinistry" required>
-                        <option value="">Select Ministry</option>
-                        <option value="Citichamps">Citichamps</option>
-                        <option value="Community Bible Study">Community Bible Study</option>
-                        <option value="Events">Events</option>
-                        <option value="General">General</option>
-                        <option value="Sunday">Sunday</option>
-                        <option value="Young Adults">Young Adults</option>
-                        <option value="Young Couples">Young Couples</option>
-                        <option value="Youth">Youth</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Ministry *</label>
+                        <select class="form-input" id="taskMinistry" required>
+                            <option value="">Select Ministry</option>
+                            <option value="Citichamps">Citichamps</option>
+                            <option value="Community Bible Study">Community Bible Study</option>
+                            <option value="Events">Events</option>
+                            <option value="General">General</option>
+                            <option value="Sunday">Sunday</option>
+                            <option value="Young Adults">Young Adults</option>
+                            <option value="Young Couples">Young Couples</option>
+                            <option value="Youth">Youth</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Assign To</label>
+                        <select class="form-input" id="taskAssignee">
+                            <option value="">Unassigned</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -2499,6 +2507,7 @@
         function updateTeamMemberDropdowns() {
             const projectAssignee = document.getElementById('projectAssignee');
             const inviteSelect = document.getElementById('inviteUserSelect');
+            const taskAssignee = document.getElementById('taskAssignee');
 
             const options = teamMembers.map(u =>
                 `<option value="${u.id}" data-email="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
@@ -2506,6 +2515,7 @@
 
             projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + options;
             inviteSelect.innerHTML = '<option value="">Select a team member</option>' + options;
+            taskAssignee.innerHTML = '<option value="">Unassigned</option>' + options;
         }
 
         // Check Auth
@@ -2787,6 +2797,7 @@
                     document.getElementById('taskStatus').value = t.status;
                     document.getElementById('taskPriority').value = t.priority;
                     document.getElementById('taskMinistry').value = t.ministry || 'General';
+                    document.getElementById('taskAssignee').value = t.assignee_id || '';
                     document.getElementById('taskProject').value = t.project_id;
                     document.getElementById('taskDueDate').value = t.due_date || '';
                 }
@@ -2796,6 +2807,7 @@
                 document.getElementById('taskStatus').value = 'todo';
                 document.getElementById('taskPriority').value = 'medium';
                 document.getElementById('taskMinistry').value = '';
+                document.getElementById('taskAssignee').value = '';
                 if (projects.length) document.getElementById('taskProject').value = projects[0].id;
                 document.getElementById('taskDueDate').value = '';
             }
@@ -2808,12 +2820,14 @@
         document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('taskId').value;
+            const assigneeValue = document.getElementById('taskAssignee').value;
             const data = {
                 summary: document.getElementById('taskSummary').value,
                 description: document.getElementById('taskDescription').value,
                 status: document.getElementById('taskStatus').value,
                 priority: document.getElementById('taskPriority').value,
                 ministry: document.getElementById('taskMinistry').value,
+                assignee_id: assigneeValue ? parseInt(assigneeValue) : null,
                 project_id: parseInt(document.getElementById('taskProject').value),
                 due_date: document.getElementById('taskDueDate').value || null
             };
