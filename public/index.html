@@ -2798,11 +2798,6 @@
             currentEditTaskId = taskId ? parseInt(taskId) : null;
             document.getElementById('taskId').value = taskId ? String(taskId) : '';
 
-            console.log('=== OPEN TASK MODAL ===');
-            console.log('taskId param:', taskId);
-            console.log('currentEditTaskId set to:', currentEditTaskId);
-            console.log('Hidden input set to:', document.getElementById('taskId').value);
-
             if (taskId) {
                 const numId = parseInt(taskId);
                 const t = tasks.find(x => parseInt(x.id) === numId);
@@ -2839,16 +2834,7 @@
         document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Use the JavaScript variable as the primary source, fall back to hidden input
-            const hiddenInputValue = document.getElementById('taskId').value;
-            const id = currentEditTaskId || hiddenInputValue;
-
-            console.log('=== TASK FORM SUBMIT ===');
-            console.log('currentEditTaskId:', currentEditTaskId);
-            console.log('hiddenInputValue:', hiddenInputValue);
-            console.log('Final id used:', id);
-            console.log('Will make:', id ? 'PUT (update)' : 'POST (create)');
-
+            const id = currentEditTaskId || document.getElementById('taskId').value;
             const assigneeValue = document.getElementById('taskAssignee').value;
             const data = {
                 summary: document.getElementById('taskSummary').value,
@@ -2862,31 +2848,23 @@
             };
             try {
                 if (id) {
-                    console.log('Making PUT request to /tasks/' + id);
                     await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
                 } else {
-                    console.log('Making POST request to /tasks');
                     await api('/tasks', { method: 'POST', body: JSON.stringify(data) });
                 }
                 closeTaskModal();
                 await Promise.all([loadTasks(), loadStats()]);
                 showToast(id ? 'Task updated!' : 'Task created!', 'success');
             } catch (err) {
-                console.error('Task save error:', err);
                 showToast(err.message, 'error');
             }
         });
 
         function viewTask(id) {
-            console.log('viewTask called with id:', id);
             const numId = parseInt(id);
             const t = tasks.find(x => parseInt(x.id) === numId);
-            if (!t) {
-                console.log('Task not found!');
-                return;
-            }
+            if (!t) return;
             currentViewTaskId = numId;
-            console.log('currentViewTaskId set to:', currentViewTaskId);
             document.getElementById('viewTaskKey').textContent = t.key;
             document.getElementById('viewTaskSummary').textContent = t.summary;
             document.getElementById('viewTaskDescription').textContent = t.description || 'No description';
@@ -2905,14 +2883,12 @@
         }
 
         function editFromView() {
-            console.log('editFromView called, currentViewTaskId:', currentViewTaskId);
-            const taskIdToEdit = currentViewTaskId;  // Save ID before closing
+            const taskIdToEdit = currentViewTaskId;
             closeViewModal();
             editTask(taskIdToEdit);
         }
 
         function editTask(id) {
-            console.log('editTask called with id:', id);
             openTaskModal(id);
         }
 
