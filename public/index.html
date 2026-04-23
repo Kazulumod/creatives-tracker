@@ -1219,7 +1219,7 @@
 
         .table-header {
             display: grid;
-            grid-template-columns: 36px 88px 1fr 130px 150px 108px 90px 120px 50px;
+            grid-template-columns: 36px 1fr 80px 1.5fr 120px 140px 110px 90px 110px 44px;
             gap: 0;
             padding: 0 16px;
             background: rgba(30, 30, 35, 0.85);
@@ -1239,7 +1239,7 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 36px 88px 1fr 130px 150px 108px 90px 120px 50px;
+            grid-template-columns: 36px 1fr 80px 1.5fr 120px 140px 110px 90px 110px 44px;
             gap: 0;
             padding: 0 16px;
             border-bottom: 1px solid var(--border-light);
@@ -1919,15 +1919,19 @@
 
             .table-header,
             .task-row {
-                grid-template-columns: 40px 1fr 100px;
+                grid-template-columns: 40px 80px 1fr 120px 44px;
             }
 
             .table-header > *:nth-child(2),
-            .table-header > *:nth-child(5),
             .table-header > *:nth-child(6),
+            .table-header > *:nth-child(7),
+            .table-header > *:nth-child(8),
+            .table-header > *:nth-child(9),
             .task-row > *:nth-child(2),
-            .task-row > *:nth-child(5),
-            .task-row > *:nth-child(6) {
+            .task-row > *:nth-child(6),
+            .task-row > *:nth-child(7),
+            .task-row > *:nth-child(8),
+            .task-row > *:nth-child(9) {
                 display: none;
             }
 
@@ -3228,6 +3232,9 @@
                 <div style="display:flex;align-items:center;padding:0 10px;">
                     <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
                 </div>
+                <div style="padding:0 10px;overflow:hidden;">
+                    <span style="font-size:12px;font-weight:600;color:${t.project_color||'var(--text-secondary)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;" title="${escapeHtml(t.project_name||'')}">${escapeHtml(t.project_name||'—')}</span>
+                </div>
                 <div style="padding:0 10px;">
                     <span class="task-key" style="color:${t.project_color || 'var(--accent)'}; font-size:12px; font-weight:700; cursor:pointer;" onclick="viewTask(${t.id})">${t.key}</span>
                 </div>
@@ -3299,7 +3306,8 @@
                 <div class="task-table">
                     <div class="table-header">
                         <span></span>
-                        <span>Key</span>
+                        <span>Project</span>
+                        <span>Task</span>
                         <span>Summary</span>
                         <span>Status</span>
                         <span>Assignee</span>
