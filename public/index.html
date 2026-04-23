@@ -1218,12 +1218,12 @@
         }
 
         .task-table {
-            min-width: 980px;
+            min-width: 1200px;
         }
 
         .table-header {
             display: grid;
-            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
+            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 1fr 1fr 46px;
             gap: 0;
             padding: 0 16px;
             background: rgba(30, 30, 35, 0.85);
@@ -1243,7 +1243,7 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
+            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 1fr 1fr 46px;
             gap: 0;
             padding: 0 16px;
             border-bottom: 1px solid var(--border-light);
@@ -3293,6 +3293,15 @@
                         <option value="Youth"                ${t.ministry==='Youth'                ?'selected':''}>Youth</option>
                     </select>
                 </div>
+                <div style="padding:0 10px;">
+                    <span style="font-size:12px; color:var(--text-secondary);">${t.created_at ? formatDate(t.created_at) : '—'}</span>
+                </div>
+                <div style="padding:0 10px;" class="assignee-cell">
+                    ${t.creator_name
+                        ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);">${getInitials(t.creator_name)}</div>
+                           <span class="assignee-name-sm">${escapeHtml(t.creator_name)}</span>`
+                        : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
+                </div>
                 <div style="padding:0 6px; display:flex; gap:4px;">
                     <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                     <button class="action-btn delete" onclick="event.stopPropagation(); deleteTask(${t.id})" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
@@ -3331,6 +3340,8 @@
                         <span>Due Date</span>
                         <span>Priority</span>
                         <span>Ministry</span>
+                        <span>Date Created</span>
+                        <span>Reporter</span>
                         <span></span>
                     </div>
                     ${filtered.map(createTaskRow).join('')}
