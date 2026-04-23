@@ -3823,7 +3823,8 @@
             const dueIcon = dueClass === 'overdue'
                 ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
                 : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
-            const assigneeInitials = t.assignee_name ? getInitials(t.assignee_name) : null;
+            const assigneeOpts = `<option value="">Unassigned</option>` +
+                teamMembers.map(u => `<option value="${u.id}" ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}>${escapeHtml(u.name)}</option>`).join('');
             return `
             <div class="task-row">
                 <div style="display:flex;align-items:center;padding:0 10px;">
@@ -3853,11 +3854,8 @@
                         <option value="done"     ${t.status==='done'     ?'selected':''}>Done</option>
                     </select>
                 </div>
-                <div style="padding:0 10px;" class="assignee-cell">
-                    ${assigneeInitials
-                        ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);">${assigneeInitials}</div>
-                           <span class="assignee-name-sm">${escapeHtml(t.assignee_name)}</span>`
-                        : `<span style="font-size:var(--font-base);color:var(--text-muted);">—</span>`}
+                <div style="padding:0 10px;">
+                    <select class="inline-select" onchange="quickUpdateTask(${t.id},'assignee_id',this.value||null)">${assigneeOpts}</select>
                 </div>
                 <div style="padding:0 10px; position:relative;">
                     <button type="button" class="inline-date-btn ${dueClass}" onclick="event.stopPropagation(); this.nextElementSibling.showPicker();">
