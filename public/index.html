@@ -1745,13 +1745,50 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             z-index: 100;
-            min-width: 200px;
-            max-height: 180px;
+            min-width: 220px;
+            max-height: 200px;
             overflow-y: auto;
-            box-shadow: var(--shadow-card);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            padding: 4px;
         }
-        .mention-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; cursor: pointer; font-size: var(--font-base); }
-        .mention-item:hover, .mention-item.active { background: rgba(255,255,255,0.05); }
+        .mention-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; cursor: pointer; font-size: var(--font-base);
+            border-radius: var(--radius-sm); transition: background 0.1s;
+        }
+        .mention-item:hover, .mention-item.active {
+            background: rgba(99,102,241,0.15);
+        }
+        .mention-item:hover .mention-item-name,
+        .mention-item.active .mention-item-name { color: var(--info); }
+        .mention-item-name { font-weight: 600; font-size: var(--font-base); }
+        .mention-item-handle { font-size: var(--font-xs); color: var(--text-muted); }
+
+        /* Textarea mention highlight backdrop */
+        .mention-backdrop {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            min-height: 72px;
+            padding: 12px 14px;
+            font-family: inherit;
+            font-size: var(--font-md);
+            line-height: var(--leading-normal);
+            color: transparent;
+            white-space: pre-wrap;
+            word-break: break-word;
+            pointer-events: none;
+            overflow: hidden;
+            box-sizing: border-box;
+            z-index: 0;
+            border-radius: 0;
+        }
+        .mention-backdrop .mention-tag {
+            color: var(--info);
+            font-weight: 600;
+            background: rgba(99,102,241,0.15);
+            border-radius: 3px;
+        }
+        .comment-textarea { position: relative; z-index: 1; }
 
         .icon-btn {
             background: transparent; border: none; color: var(--text-secondary);
@@ -2889,6 +2926,7 @@
                                     ondragenter="handleCommentDragEnter(event)"
                                     ondragleave="handleCommentDragLeave(event)"
                                     ondrop="handleCommentDrop(event)">
+                                    <div id="mentionBackdrop" class="mention-backdrop" aria-hidden="true"></div>
                                     <textarea class="comment-textarea" id="commentInput" placeholder="Add a comment… type @ to mention someone"></textarea>
                                     <div id="commentImagePreview" class="comment-image-preview"></div>
                                     <div class="comment-toolbar">
@@ -3876,8 +3914,16 @@
             quickUpdateTask(taskId, 'due_date', val);
         }
 
-        function renderMentions(html) {
-            return html.replace(/@([\w. ]+)/g, '<span class="mention">@$1</span>');
+        function renderMentions(escapedText) {
+            if (!teamMembers.length) return escapedText;
+            let result = escapedText;
+            // Sort longest names first so "John Smith Jr" matches before "John Smith"
+            const sorted = [...teamMembers].sort((a, b) => b.name.length - a.name.length);
+            for (const m of sorted) {
+                const safe = escapeHtml(m.name);
+                result = result.split('@' + safe).join(`<span class="mention">@${safe}</span>`);
+            }
+            return result;
         }
 
         async function submitComment() {
@@ -3904,6 +3950,8 @@
                 commentImages = [];
                 document.getElementById('commentImagePreview').innerHTML = '';
                 document.getElementById('commentImageInput').value = '';
+                const bd = document.getElementById('mentionBackdrop');
+                if (bd) bd.innerHTML = '';
                 hideMentionDropdown();
                 await loadComments(currentViewTaskId);
             } catch(err) { showToast(err.message, 'error'); }
@@ -4004,6 +4052,7 @@
             textarea._mentionReady = true;
 
             textarea.addEventListener('input', function() {
+                updateMentionBackdrop();
                 const val = this.value, cur = this.selectionStart;
                 let i = cur - 1;
                 while (i >= 0 && val[i] !== ' ' && val[i] !== '\n') {
@@ -4017,11 +4066,19 @@
                     if (!matches.length) { hideMentionDropdown(); return; }
                     dd.innerHTML = matches.map(u => `
                         <div class="mention-item" onclick="insertMention('${escapeHtml(u.name)}')">
-                            <div class="comment-avatar" style="width:24px;height:24px;font-size:var(--font-xs);">${getInitials(u.name)}</div>
-                            <span>${escapeHtml(u.name)}</span>
+                            <div class="comment-avatar" style="width:28px;height:28px;font-size:var(--font-xs);flex-shrink:0;">${getInitials(u.name)}</div>
+                            <div>
+                                <div class="mention-item-name">${escapeHtml(u.name)}</div>
+                                <div class="mention-item-handle">@${escapeHtml(u.name)}</div>
+                            </div>
                         </div>`).join('');
                     dd.style.display = 'block';
                 } else { hideMentionDropdown(); }
+            });
+
+            textarea.addEventListener('scroll', function() {
+                const backdrop = document.getElementById('mentionBackdrop');
+                if (backdrop) backdrop.scrollTop = this.scrollTop;
             });
 
             textarea.addEventListener('keydown', function(e) {
@@ -4033,13 +4090,29 @@
                 else if (e.key === 'ArrowUp') { e.preventDefault(); items[idx]?.classList.remove('active'); items[Math.max(idx-1,0)].classList.add('active'); }
                 else if (e.key === 'Enter' || e.key === 'Tab') {
                     const active = dd.querySelector('.mention-item.active') || dd.querySelector('.mention-item');
-                    if (active) { e.preventDefault(); insertMention(active.querySelector('span').textContent); }
+                    if (active) { e.preventDefault(); insertMention(active.querySelector('.mention-item-name').textContent); }
                 } else if (e.key === 'Escape') hideMentionDropdown();
             });
 
             textarea.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitComment(); }
             });
+        }
+
+        function updateMentionBackdrop() {
+            const textarea = document.getElementById('commentInput');
+            const backdrop = document.getElementById('mentionBackdrop');
+            if (!textarea || !backdrop) return;
+            backdrop.style.height = textarea.offsetHeight + 'px';
+            backdrop.scrollTop = textarea.scrollTop;
+            let html = textarea.value
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const sorted = [...teamMembers].sort((a, b) => b.name.length - a.name.length);
+            for (const m of sorted) {
+                const safe = m.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                html = html.split('@' + safe).join(`<span class="mention-tag">@${safe}</span>`);
+            }
+            backdrop.innerHTML = html + ' ';
         }
 
         function insertMention(name) {
@@ -4050,6 +4123,7 @@
             textarea.setSelectionRange(pos, pos);
             textarea.focus();
             hideMentionDropdown();
+            updateMentionBackdrop();
         }
 
         function closeViewModal() {
