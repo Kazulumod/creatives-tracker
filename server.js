@@ -698,13 +698,14 @@ app.get('/api/stats', authenticate, async (req, res) => {
                 COUNT(*) as total,
                 SUM(CASE WHEN t.status = 'todo' THEN 1 ELSE 0 END) as todo,
                 SUM(CASE WHEN t.status = 'progress' THEN 1 ELSE 0 END) as progress,
+                SUM(CASE WHEN t.status = 'review' THEN 1 ELSE 0 END) as review,
                 SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done
             FROM tasks t
             JOIN project_members pm ON t.project_id = pm.project_id
             WHERE pm.user_id = $1
         `, [req.user.id]);
 
-        res.json(result.rows[0] || { total: 0, todo: 0, progress: 0, done: 0 });
+        res.json(result.rows[0] || { total: 0, todo: 0, progress: 0, review: 0, done: 0 });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }

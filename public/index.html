@@ -1112,6 +1112,7 @@
         .stat-card.total { --stat-color: var(--accent); }
         .stat-card.todo { --stat-color: var(--text-muted); }
         .stat-card.progress { --stat-color: var(--warning); }
+        .stat-card.review { --stat-color: var(--info); }
         .stat-card.done { --stat-color: var(--success); }
 
         .stat-icon {
@@ -1282,6 +1283,7 @@
 
         .inline-select.status-select.todo { color: var(--text-secondary); }
         .inline-select.status-select.progress { color: var(--warning); }
+        .inline-select.status-select.review { color: var(--info); }
         .inline-select.status-select.done { color: var(--success); }
 
         .inline-select.priority-select.high { color: var(--danger); }
@@ -1358,6 +1360,11 @@
         .status-badge.progress {
             background: rgba(234, 179, 8, 0.15);
             color: var(--warning);
+        }
+
+        .status-badge.review {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--info);
         }
 
         .status-badge.done {
@@ -2138,6 +2145,13 @@
                         In Progress
                         <span class="badge" id="sidebar-progress">0</span>
                     </div>
+                    <div class="sidebar-item" data-filter="review" onclick="filterByStatus('review', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        For Review
+                        <span class="badge" id="sidebar-review">0</span>
+                    </div>
                     <div class="sidebar-item" data-filter="done" onclick="filterByStatus('done', this)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -2203,6 +2217,15 @@
                         <div class="stat-value" id="stat-progress">0</div>
                         <div class="stat-label">In Progress</div>
                     </div>
+                    <div class="stat-card review">
+                        <div class="stat-icon" style="color: var(--info);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                        </div>
+                        <div class="stat-value" id="stat-review">0</div>
+                        <div class="stat-label">For Review</div>
+                    </div>
                     <div class="stat-card done">
                         <div class="stat-icon" style="color: var(--success);">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2221,6 +2244,7 @@
                             <option value="all">All Status</option>
                             <option value="todo">To Do</option>
                             <option value="progress">In Progress</option>
+                            <option value="review">For Review</option>
                             <option value="done">Done</option>
                         </select>
                         <select id="priorityFilter">
@@ -2279,6 +2303,13 @@
                     </div>
                     <div class="board-column">
                         <div class="column-header">
+                            <span class="column-title"><span class="status-dot" style="background: var(--info);"></span> For Review</span>
+                            <span class="column-count" id="board-review-count">0</span>
+                        </div>
+                        <div id="board-review"></div>
+                    </div>
+                    <div class="board-column">
+                        <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--success);"></span> Done</span>
                             <span class="column-count" id="board-done-count">0</span>
                         </div>
@@ -2317,6 +2348,7 @@
                         <select class="form-input" id="taskStatus">
                             <option value="todo">To Do</option>
                             <option value="progress">In Progress</option>
+                            <option value="review">For Review</option>
                             <option value="done">Done</option>
                         </select>
                     </div>
@@ -2942,10 +2974,12 @@
                 document.getElementById('stat-total').textContent = stats.total || 0;
                 document.getElementById('stat-todo').textContent = stats.todo || 0;
                 document.getElementById('stat-progress').textContent = stats.progress || 0;
+                document.getElementById('stat-review').textContent = stats.review || 0;
                 document.getElementById('stat-done').textContent = stats.done || 0;
                 document.getElementById('sidebar-total').textContent = stats.total || 0;
                 document.getElementById('sidebar-todo').textContent = stats.todo || 0;
                 document.getElementById('sidebar-progress').textContent = stats.progress || 0;
+                document.getElementById('sidebar-review').textContent = stats.review || 0;
                 document.getElementById('sidebar-done').textContent = stats.done || 0;
             } catch (err) {}
         }
@@ -2988,9 +3022,10 @@
                     <span class="task-key" onclick="viewTask(${t.id})">${t.key}</span>
                     <span class="task-summary" onclick="viewTask(${t.id})">${escapeHtml(t.summary)}</span>
                     <span class="task-desc-cell" onclick="viewTask(${t.id})">${desc}</span>
-                    <select class="inline-select status-select ${t.status}" onchange="quickUpdateTask(${t.id}, 'status', this.value)">
+                    <select class="inline-select status-select ${t.status}" onchange="this.className='inline-select status-select '+this.value; quickUpdateTask(${t.id}, 'status', this.value)">
                         <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
                         <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="review" ${t.status === 'review' ? 'selected' : ''}>For Review</option>
                         <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
                     </select>
                     <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id}, 'priority', this.value)">
@@ -3012,12 +3047,15 @@
         function renderBoardView(filtered) {
             const todo = filtered.filter(t => t.status === 'todo');
             const progress = filtered.filter(t => t.status === 'progress');
+            const review = filtered.filter(t => t.status === 'review');
             const done = filtered.filter(t => t.status === 'done');
             document.getElementById('board-todo').innerHTML = todo.map(createBoardCard).join('');
             document.getElementById('board-progress').innerHTML = progress.map(createBoardCard).join('');
+            document.getElementById('board-review').innerHTML = review.map(createBoardCard).join('');
             document.getElementById('board-done').innerHTML = done.map(createBoardCard).join('');
             document.getElementById('board-todo-count').textContent = todo.length;
             document.getElementById('board-progress-count').textContent = progress.length;
+            document.getElementById('board-review-count').textContent = review.length;
             document.getElementById('board-done-count').textContent = done.length;
         }
 
@@ -3204,7 +3242,7 @@
 
         // Utils
         function getStatusLabel(s) {
-            return { todo: 'To Do', progress: 'In Progress', done: 'Done' }[s] || s;
+            return { todo: 'To Do', progress: 'In Progress', review: 'For Review', done: 'Done' }[s] || s;
         }
 
         function getPriorityIcon(p) {
