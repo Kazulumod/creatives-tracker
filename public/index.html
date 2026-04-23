@@ -2968,6 +2968,8 @@
             document.getElementById('appContainer').classList.add('active');
 
             await Promise.all([loadProjects(), loadTasks(), loadStats(), loadTeamMembers()]);
+            const savedView = localStorage.getItem('ct_view') || 'board';
+            setView(savedView);
         }
 
         // Load all team members for dropdowns
@@ -3543,6 +3545,7 @@
 
         function setView(view) {
             currentView = view;
+            localStorage.setItem('ct_view', view);
             document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
             document.getElementById('boardViewBtn').classList.toggle('active', view === 'board');
             document.getElementById('listView').classList.toggle('hidden', view !== 'list');
