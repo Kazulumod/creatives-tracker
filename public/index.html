@@ -3250,9 +3250,9 @@
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
                     <span style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHtml(t.summary)}">${escapeHtml(t.summary)}</span>
                 </div>
-                <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
+                <div style="padding:6px 10px; cursor:pointer;" onclick="viewTask(${t.id})">
                     ${t.description
-                        ? `<span style="font-size:13px; color:var(--text-secondary); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>`
+                        ? `<span style="font-size:13px; color:var(--text-secondary); line-height:1.5;">${escapeHtml(t.description)}</span>`
                         : `<span style="font-size:13px; color:var(--text-muted);">—</span>`}
                 </div>
                 <div style="padding:0 10px;">
