@@ -1385,10 +1385,18 @@
         .inline-select.priority-select.high { color: var(--danger); }
         .inline-select.priority-select.medium { color: var(--warning); }
         .inline-select.priority-select.low { color: var(--info); }
-        .inline-select.priority-select option { color: var(--text-primary); }
-        .inline-select.priority-select option[value="high"] { color: var(--danger); }
-        .inline-select.priority-select option[value="medium"] { color: var(--warning); }
-        .inline-select.priority-select option[value="low"] { color: var(--info); }
+        /* All dropdown options: dark text on white so they're readable when OS opens the list */
+        .inline-select option,
+        .status-pill option,
+        .board-inline-select option,
+        .inline-date-btn option {
+            color: #111111;
+            background: #ffffff;
+        }
+
+        .inline-select.priority-select option[value="high"]   { color: #dc2626; }
+        .inline-select.priority-select option[value="medium"] { color: #b45309; }
+        .inline-select.priority-select option[value="low"]    { color: #1d4ed8; }
 
         .inline-select.project-select { color: var(--text-primary); }
 
