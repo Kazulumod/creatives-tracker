@@ -1539,11 +1539,85 @@
         }
 
         .list-view {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .list-view.hidden {
             display: none;
+        }
+
+        .task-group {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .task-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            background: rgba(39, 39, 42, 0.5);
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        [data-theme="light"] .task-group-header {
+            background: #1f2937;
+            color: #fff;
+        }
+
+        .task-group-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .task-group-title {
+            color: #fff;
+        }
+
+        .task-group-count {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            background: rgba(255,255,255,0.15);
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .task-group-count {
+            color: #fff;
+        }
+
+        .task-group-chevron {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .task-group.collapsed .task-group-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .task-group.collapsed .task-group-body {
+            display: none;
+        }
+
+        .task-group .task-table {
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            backdrop-filter: none;
+        }
+
+        .task-group .table-header {
+            border-radius: 0;
         }
 
         /* Empty State */
@@ -2287,13 +2361,7 @@
                 </div>
 
                 <div class="list-view hidden" id="listView">
-                    <div class="task-table">
-                        <div class="table-header">
-                            <span></span><span>ID</span><span>Task</span><span>Description</span><span>Status</span>
-                            <span>Priority</span><span>Project</span><span>Ministry</span><span></span>
-                        </div>
-                        <div id="taskList"></div>
-                    </div>
+                    <div id="taskList"></div>
                 </div>
 
                 <div class="board-view active" id="boardView">
@@ -3004,64 +3072,105 @@
             renderBoardView(filtered);
         }
 
+        function createTaskRow(t) {
+            const desc = t.description ? escapeHtml(t.description).substring(0, 40) + (t.description.length > 40 ? '...' : '') : '-';
+            const projectOptions = projects.map(p =>
+                `<option value="${p.id}" ${parseInt(p.id) === parseInt(t.project_id) ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+            ).join('');
+            return `
+            <div class="task-row">
+                <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
+                <span class="task-key" onclick="viewTask(${t.id})">${t.key}</span>
+                <span class="task-summary" onclick="viewTask(${t.id})">${escapeHtml(t.summary)}</span>
+                <span class="task-desc-cell" onclick="viewTask(${t.id})">${desc}</span>
+                <select class="inline-select status-select ${t.status}" onchange="this.className='inline-select status-select '+this.value; quickUpdateTask(${t.id}, 'status', this.value)">
+                    <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
+                    <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="review" ${t.status === 'review' ? 'selected' : ''}>For Review</option>
+                    <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
+                </select>
+                <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id}, 'priority', this.value)">
+                    <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+                    <option value="medium" ${t.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                    <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+                </select>
+                <select class="inline-select project-select" onchange="quickUpdateTask(${t.id}, 'project_id', this.value)">
+                    ${projectOptions || `<option value="${t.project_id}">${escapeHtml(t.project_name)}</option>`}
+                </select>
+                <select class="inline-select" onchange="quickUpdateTask(${t.id}, 'ministry', this.value)">
+                    <option value="Citichamps" ${t.ministry === 'Citichamps' ? 'selected' : ''}>Citichamps</option>
+                    <option value="Community Bible Study" ${t.ministry === 'Community Bible Study' ? 'selected' : ''}>Community Bible Study</option>
+                    <option value="Events" ${t.ministry === 'Events' ? 'selected' : ''}>Events</option>
+                    <option value="General" ${(t.ministry === 'General' || !t.ministry) ? 'selected' : ''}>General</option>
+                    <option value="Sunday" ${t.ministry === 'Sunday' ? 'selected' : ''}>Sunday</option>
+                    <option value="Young Adults" ${t.ministry === 'Young Adults' ? 'selected' : ''}>Young Adults</option>
+                    <option value="Young Couples" ${t.ministry === 'Young Couples' ? 'selected' : ''}>Young Couples</option>
+                    <option value="Youth" ${t.ministry === 'Youth' ? 'selected' : ''}>Youth</option>
+                </select>
+                <div class="task-actions">
+                    <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                </div>
+            </div>`;
+        }
+
+        const TABLE_HEADER = `
+            <div class="table-header">
+                <span></span><span>ID</span><span>Task</span><span>Description</span><span>Status</span>
+                <span>Priority</span><span>Project</span><span>Ministry</span><span></span>
+            </div>`;
+
+        const STATUS_GROUPS = [
+            { key: 'todo',     label: 'To Do',       dot: 'var(--text-muted)' },
+            { key: 'progress', label: 'In Progress',  dot: 'var(--warning)' },
+            { key: 'review',   label: 'For Review',   dot: 'var(--info)' },
+            { key: 'done',     label: 'Done',         dot: 'var(--success)' },
+        ];
+
         function renderListView(filtered) {
             const container = document.getElementById('taskList');
             if (filtered.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>
-                            </svg>
+                    <div class="task-group">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>
+                                </svg>
+                            </div>
+                            <h3>No tasks found</h3>
+                            <p>Create a new task to get started</p>
+                            <button class="btn btn-primary" onclick="openTaskModal()">New Task</button>
                         </div>
-                        <h3>No tasks found</h3>
-                        <p>Create a new task to get started</p>
-                        <button class="btn btn-primary" onclick="openTaskModal()">New Task</button>
                     </div>`;
                 return;
             }
-            container.innerHTML = filtered.map(t => {
-                const desc = t.description ? escapeHtml(t.description).substring(0, 40) + (t.description.length > 40 ? '...' : '') : '-';
-                const projectOptions = projects.map(p =>
-                    `<option value="${p.id}" ${parseInt(p.id) === parseInt(t.project_id) ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
-                ).join('');
-                const currentProjectName = t.project_name || 'Select Project';
+
+            const chevron = `<svg class="task-group-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+            container.innerHTML = STATUS_GROUPS.map(group => {
+                const groupTasks = filtered.filter(t => t.status === group.key);
+                if (groupTasks.length === 0) return '';
                 return `
-                <div class="task-row">
-                    <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
-                    <span class="task-key" onclick="viewTask(${t.id})">${t.key}</span>
-                    <span class="task-summary" onclick="viewTask(${t.id})">${escapeHtml(t.summary)}</span>
-                    <span class="task-desc-cell" onclick="viewTask(${t.id})">${desc}</span>
-                    <select class="inline-select status-select ${t.status}" onchange="this.className='inline-select status-select '+this.value; quickUpdateTask(${t.id}, 'status', this.value)">
-                        <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
-                        <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
-                        <option value="review" ${t.status === 'review' ? 'selected' : ''}>For Review</option>
-                        <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
-                    </select>
-                    <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id}, 'priority', this.value)">
-                        <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
-                        <option value="medium" ${t.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                        <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
-                    </select>
-                    <select class="inline-select project-select" onchange="quickUpdateTask(${t.id}, 'project_id', this.value)">
-                        ${projectOptions || `<option value="${t.project_id}">${escapeHtml(t.project_name)}</option>`}
-                    </select>
-                    <select class="inline-select" onchange="quickUpdateTask(${t.id}, 'ministry', this.value)">
-                        <option value="Citichamps" ${t.ministry === 'Citichamps' ? 'selected' : ''}>Citichamps</option>
-                        <option value="Community Bible Study" ${t.ministry === 'Community Bible Study' ? 'selected' : ''}>Community Bible Study</option>
-                        <option value="Events" ${t.ministry === 'Events' ? 'selected' : ''}>Events</option>
-                        <option value="General" ${(t.ministry === 'General' || !t.ministry) ? 'selected' : ''}>General</option>
-                        <option value="Sunday" ${t.ministry === 'Sunday' ? 'selected' : ''}>Sunday</option>
-                        <option value="Young Adults" ${t.ministry === 'Young Adults' ? 'selected' : ''}>Young Adults</option>
-                        <option value="Young Couples" ${t.ministry === 'Young Couples' ? 'selected' : ''}>Young Couples</option>
-                        <option value="Youth" ${t.ministry === 'Youth' ? 'selected' : ''}>Youth</option>
-                    </select>
-                    <div class="task-actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+                <div class="task-group" id="group-${group.key}">
+                    <div class="task-group-header" onclick="toggleGroup('${group.key}')">
+                        <span class="status-dot" style="background: ${group.dot};"></span>
+                        <span class="task-group-title">${group.label}</span>
+                        <span class="task-group-count">${groupTasks.length}</span>
+                        ${chevron}
+                    </div>
+                    <div class="task-group-body">
+                        <div class="task-table">
+                            ${TABLE_HEADER}
+                            ${groupTasks.map(createTaskRow).join('')}
+                        </div>
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        function toggleGroup(status) {
+            document.getElementById(`group-${status}`).classList.toggle('collapsed');
         }
 
         function renderBoardView(filtered) {
