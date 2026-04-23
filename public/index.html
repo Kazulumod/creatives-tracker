@@ -1584,10 +1584,10 @@
         }
 
         .task-detail-sidebar {
-            width: 280px;
+            width: 360px;
             flex-shrink: 0;
             overflow-y: auto;
-            padding: 22px 20px;
+            padding: 22px 24px;
         }
 
         .task-detail-title {
@@ -1610,15 +1610,17 @@
 
         /* Detail sidebar rows */
         .detail-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 90px 1fr;
             align-items: center;
-            min-height: 38px;
+            min-height: 42px;
             border-bottom: 1px solid var(--border-light);
             gap: 10px;
+            padding: 4px 0;
         }
         .detail-row:last-child { border-bottom: none; }
-        .detail-key { font-size: 12px; color: var(--text-muted); width: 84px; flex-shrink: 0; }
-        .detail-val { font-size: 13px; color: var(--text-primary); flex: 1; }
+        .detail-key { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+        .detail-val { font-size: 13px; color: var(--text-primary); min-width: 0; }
 
         /* Comments */
         .comment-compose { display: flex; gap: 12px; }
@@ -3673,40 +3675,72 @@
             document.getElementById('viewTaskDescription').textContent = t.description || 'No description provided.';
 
             const dueClass = getDueClass(t.due_date);
+            const projectOpts = projects.map(p => `<option value="${p.id}" ${parseInt(p.id)===parseInt(t.project_id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+            const assigneeOpts = `<option value="">Unassigned</option>` + teamMembers.map(u => `<option value="${u.id}" ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}>${escapeHtml(u.name)}</option>`).join('');
+            const ministryOpts = ['Citichamps','Community Bible Study','Events','General','Sunday','Young Adults','Young Couples','Youth']
+                .map(m => `<option value="${m}" ${t.ministry===m?'selected':''}>${m}</option>`).join('');
+
             document.getElementById('viewTaskDetails').innerHTML = `
-                <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val">
-                    <select class="inline-select status-pill ${t.status}" style="width:auto;" onchange="this.className='inline-select status-pill '+this.value;quickUpdateTask(${t.id},'status',this.value);">
-                        <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
-                        <option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option>
-                        <option value="review" ${t.status==='review'?'selected':''}>For Review</option>
-                        <option value="done" ${t.status==='done'?'selected':''}>Done</option>
-                    </select>
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Priority</div><div class="detail-val">
-                    <select class="inline-select priority-select ${t.priority}" style="width:auto;" onchange="this.className='inline-select priority-select '+this.value;quickUpdateTask(${t.id},'priority',this.value);">
-                        <option value="high" ${t.priority==='high'?'selected':''}>↑ High</option>
-                        <option value="medium" ${t.priority==='medium'?'selected':''}>→ Medium</option>
-                        <option value="low" ${t.priority==='low'?'selected':''}>↓ Low</option>
-                    </select>
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Project</div><div class="detail-val">
-                    <span class="project-tag"><span class="dot" style="background:${t.project_color||'#84cc16'}"></span>${escapeHtml(t.project_name)}</span>
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Assignee</div><div class="detail-val" style="display:flex;align-items:center;gap:8px;">
-                    ${t.assignee_name
-                        ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;">${getInitials(t.assignee_name)}</div><span>${escapeHtml(t.assignee_name)}</span>`
-                        : `<span style="color:var(--text-muted);">Unassigned</span>`}
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Reporter</div><div class="detail-val" style="display:flex;align-items:center;gap:8px;">
-                    ${t.creator_name
-                        ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);">${getInitials(t.creator_name)}</div><span>${escapeHtml(t.creator_name)}</span>`
-                        : `<span style="color:var(--text-muted);">—</span>`}
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Due Date</div><div class="detail-val" style="${dueClass==='overdue'?'color:var(--danger)':dueClass==='soon'?'color:var(--warning)':''}">
-                    ${t.due_date ? formatDate(t.due_date) : '<span style="color:var(--text-muted);">No due date</span>'}
-                </div></div>
-                <div class="detail-row"><div class="detail-key">Ministry</div><div class="detail-val">${escapeHtml(t.ministry||'General')}</div></div>
-                <div class="detail-row"><div class="detail-key">Created</div><div class="detail-val" style="color:var(--text-muted);">${t.created_at?formatDate(t.created_at):'—'}</div></div>
+                <div class="detail-row">
+                    <div class="detail-key">Status</div>
+                    <div class="detail-val">
+                        <select class="inline-select status-pill ${t.status}" onchange="this.className='inline-select status-pill '+this.value;quickUpdateTask(${t.id},'status',this.value);">
+                            <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+                            <option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option>
+                            <option value="review" ${t.status==='review'?'selected':''}>For Review</option>
+                            <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Priority</div>
+                    <div class="detail-val">
+                        <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value;quickUpdateTask(${t.id},'priority',this.value);">
+                            <option value="high" ${t.priority==='high'?'selected':''}>↑ High</option>
+                            <option value="medium" ${t.priority==='medium'?'selected':''}>→ Medium</option>
+                            <option value="low" ${t.priority==='low'?'selected':''}>↓ Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Project</div>
+                    <div class="detail-val">
+                        <select class="inline-select" onchange="quickUpdateTask(${t.id},'project_id',this.value);">${projectOpts}</select>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Assignee</div>
+                    <div class="detail-val">
+                        <select class="inline-select" onchange="quickUpdateTask(${t.id},'assignee_id',this.value);">${assigneeOpts}</select>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Reporter</div>
+                    <div class="detail-val" style="display:flex;align-items:center;gap:8px;">
+                        ${t.creator_name
+                            ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);flex-shrink:0;">${getInitials(t.creator_name)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.creator_name)}</span>`
+                            : `<span style="color:var(--text-muted);">—</span>`}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Due Date</div>
+                    <div class="detail-val" style="position:relative;">
+                        <button type="button" class="inline-date-btn ${dueClass}" id="viewDueDateBtn" onclick="this.nextElementSibling.showPicker();">
+                            ${t.due_date ? formatDate(t.due_date) : '<span style="color:var(--text-muted);">Set date</span>'}
+                        </button>
+                        <input type="date" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" value="${t.due_date?t.due_date.split('T')[0]:''}" onchange="updateViewDate(this,${t.id})">
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Ministry</div>
+                    <div class="detail-val">
+                        <select class="inline-select" onchange="quickUpdateTask(${t.id},'ministry',this.value);">${ministryOpts}</select>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-key">Created</div>
+                    <div class="detail-val" style="color:var(--text-muted);font-size:12px;">${t.created_at?formatDate(t.created_at):'—'}</div>
+                </div>
             `;
 
             if (currentUser) {
@@ -3743,6 +3777,15 @@
                         </div>
                     </div>`).join('');
             } catch(err) { console.error('Failed to load comments', err); }
+        }
+
+        function updateViewDate(input, taskId) {
+            const btn = document.getElementById('viewDueDateBtn');
+            const val = input.value;
+            btn.innerHTML = val ? formatDate(val) : '<span style="color:var(--text-muted);">Set date</span>';
+            const dc = getDueClass(val);
+            btn.className = 'inline-date-btn' + (dc ? ' ' + dc : '');
+            quickUpdateTask(taskId, 'due_date', val);
         }
 
         function renderMentions(html) {
