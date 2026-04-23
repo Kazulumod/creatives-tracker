@@ -166,7 +166,7 @@ async function initDatabase() {
             END $$;
         `);
 
-        await client.query(`UPDATE users SET is_admin = TRUE WHERE email = 'audrey.john@pray.com'`);
+        await client.query(`UPDATE users SET is_admin = TRUE WHERE email IN ('audrey.john@pray.com', 'kazulumod@gmail.com')`);
 
         console.log('Database initialized');
     } finally {
