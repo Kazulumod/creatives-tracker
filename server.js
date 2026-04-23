@@ -10,32 +10,35 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'creatives-tracker-secret-key-change-in-production';
 const INVITE_CODE = process.env.INVITE_CODE || 'CREATIVES2026';
 
-// Email Configuration — uses Resend (resend.com), free tier, no SMTP setup required
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-if (RESEND_API_KEY) {
-    console.log('Email configured via Resend');
+// Email — Brevo (brevo.com). Free tier, no domain verification needed.
+// Set BREVO_API_KEY and BREVO_SENDER in Render environment variables.
+const BREVO_API_KEY  = process.env.BREVO_API_KEY;
+const BREVO_SENDER   = process.env.BREVO_SENDER;   // verified sender email in Brevo
+
+if (BREVO_API_KEY && BREVO_SENDER) {
+    console.log(`Email configured via Brevo — sender: ${BREVO_SENDER}`);
 } else {
-    console.warn('Email not configured — add RESEND_API_KEY in Render environment variables');
+    console.warn('Email not configured. Add BREVO_API_KEY and BREVO_SENDER to Render environment variables.');
 }
 
-async function sendEmail(to, subject, html) {
-    if (!RESEND_API_KEY) return;
+async function sendEmail(to, toName, subject, html) {
+    if (!BREVO_API_KEY || !BREVO_SENDER) return;
     try {
-        const res = await fetch('https://api.resend.com/emails', {
+        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
+                'api-key': BREVO_API_KEY,
+                'content-type': 'application/json'
             },
             body: JSON.stringify({
-                from: 'Creatives Tracker <onboarding@resend.dev>',
-                to,
+                sender: { name: 'Creatives Tracker', email: BREVO_SENDER },
+                to: [{ email: to, name: toName || to }],
                 subject,
-                html
+                htmlContent: html
             })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+        if (!res.ok) throw new Error(JSON.stringify(data));
         console.log(`Email sent to ${to}`);
     } catch (err) {
         console.error('Email failed:', err.message);
@@ -75,8 +78,7 @@ function taskCard(taskKey, taskSummary) {
 }
 
 async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, taskKey, assignerName) {
-    await sendEmail(
-        assigneeEmail,
+    await sendEmail(assigneeEmail, assigneeName,
         `[${taskKey}] You've been assigned: ${taskSummary}`,
         emailLayout(`
             <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${assigneeName}</strong>,</p>
@@ -88,8 +90,7 @@ async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, tas
 
 async function sendMentionEmail(toEmail, toName, mentionedByName, taskSummary, taskKey, commentText) {
     const preview = commentText.length > 200 ? commentText.slice(0, 200) + '…' : commentText;
-    await sendEmail(
-        toEmail,
+    await sendEmail(toEmail, toName,
         `[${taskKey}] ${mentionedByName} mentioned you`,
         emailLayout(`
             <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
@@ -112,8 +113,7 @@ async function sendTaskUpdateEmail(toEmail, toName, changerName, taskSummary, ta
             <td style="padding:6px 0;color:#6b7280;font-size:13px;width:110px;vertical-align:top;">${c.label}</td>
             <td style="padding:6px 0;color:#111827;font-size:13px;">${c.value}</td>
         </tr>`).join('');
-    await sendEmail(
-        toEmail,
+    await sendEmail(toEmail, toName,
         `[${taskKey}] Task updated: ${taskSummary}`,
         emailLayout(`
             <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
