@@ -869,6 +869,42 @@
             border-color: var(--accent);
         }
 
+        .search-history-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .search-history-dropdown.show { display: block; }
+        .search-history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: background 0.15s;
+        }
+        .search-history-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .search-history-item svg { flex-shrink: 0; opacity: 0.45; }
+        .search-history-clear {
+            padding: 7px 14px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-align: right;
+            border-top: 1px solid var(--border-color);
+        }
+        .search-history-clear:hover { color: var(--accent); }
+
         .app-search svg {
             position: absolute;
             left: 14px;
@@ -2810,7 +2846,8 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                     </svg>
-                    <input type="text" placeholder="Search tasks..." id="searchInput">
+                    <input type="text" placeholder="Search tasks..." id="searchInput" autocomplete="off">
+                    <div id="searchHistory" class="search-history-dropdown"></div>
                 </div>
             </div>
             <div class="app-header-right">
@@ -3621,6 +3658,7 @@
                 _portalCallback = null;
                 _portalAnchor   = null;
             }
+            if (!e.target.closest('.app-search')) _hideSearchHistory();
         });
 
         // Init App
@@ -4733,7 +4771,74 @@
             }
             loadTasks();
         });
-        document.getElementById('searchInput').addEventListener('input', e => { currentFilters.search = e.target.value; renderTasks(); });
+        // Per-user search history stored in localStorage under each user's ID
+        function _searchHistoryKey() { return currentUser ? `ct_search_${currentUser.id}` : null; }
+        function _getSearchHistory() {
+            const key = _searchHistoryKey();
+            if (!key) return [];
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+        }
+        function _saveSearchTerm(term) {
+            const key = _searchHistoryKey();
+            if (!key || !term.trim()) return;
+            let h = _getSearchHistory().filter(x => x.toLowerCase() !== term.toLowerCase());
+            h.unshift(term.trim());
+            localStorage.setItem(key, JSON.stringify(h.slice(0, 8)));
+        }
+        function _hideSearchHistory() {
+            document.getElementById('searchHistory')?.classList.remove('show');
+        }
+        function _showSearchHistory(filter) {
+            const dropdown = document.getElementById('searchHistory');
+            if (!dropdown) return;
+            let history = _getSearchHistory();
+            if (filter) history = history.filter(h => h.toLowerCase().includes(filter.toLowerCase()));
+            if (!history.length) { _hideSearchHistory(); return; }
+            dropdown.innerHTML =
+                history.map(h =>
+                    `<div class="search-history-item" data-term="${escapeHtml(h)}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        ${escapeHtml(h)}
+                    </div>`
+                ).join('') +
+                `<div class="search-history-clear">Clear history</div>`;
+            dropdown.classList.add('show');
+            dropdown.onclick = (e) => {
+                const item = e.target.closest('.search-history-item');
+                if (item) {
+                    const term = item.dataset.term;
+                    const inp = document.getElementById('searchInput');
+                    inp.value = term;
+                    currentFilters.search = term;
+                    renderTasks();
+                    _saveSearchTerm(term);
+                    _hideSearchHistory();
+                }
+                if (e.target.classList.contains('search-history-clear')) {
+                    const key = _searchHistoryKey();
+                    if (key) localStorage.removeItem(key);
+                    _hideSearchHistory();
+                }
+            };
+        }
+
+        (function() {
+            const inp = document.getElementById('searchInput');
+            inp.addEventListener('focus', () => _showSearchHistory(inp.value));
+            inp.addEventListener('input', e => {
+                currentFilters.search = e.target.value;
+                renderTasks();
+                _showSearchHistory(e.target.value);
+            });
+            inp.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && inp.value.trim()) { _saveSearchTerm(inp.value.trim()); _hideSearchHistory(); }
+                if (e.key === 'Escape') { _hideSearchHistory(); inp.blur(); }
+            });
+            inp.addEventListener('blur', () => {
+                if (inp.value.trim()) _saveSearchTerm(inp.value.trim());
+                setTimeout(_hideSearchHistory, 200);
+            });
+        })();
 
         function setView(view) {
             currentView = view;

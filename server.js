@@ -613,13 +613,18 @@ app.post('/api/tasks', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Summary and project are required' });
         }
 
-        // Get and increment task counter
-        const counterResult = await pool.query('SELECT counter FROM task_counter WHERE project_id = $1', [project_id]);
-        const newCounter = (counterResult.rows[0]?.counter || 0) + 1;
-        await pool.query('UPDATE task_counter SET counter = $1 WHERE project_id = $2', [newCounter, project_id]);
+        // Get and increment task counter atomically
+        const counterResult = await pool.query(
+            'UPDATE task_counter SET counter = counter + 1 WHERE project_id = $1 RETURNING counter',
+            [project_id]
+        );
+        const newCounter = counterResult.rows[0]?.counter || 1;
 
         // Get project prefix
         const projectResult = await pool.query('SELECT name FROM projects WHERE id = $1', [project_id]);
+        if (!projectResult.rows[0]) {
+            return res.status(404).json({ error: 'Workspace not found' });
+        }
         const prefix = projectResult.rows[0].name.substring(0, 3).toUpperCase();
         const taskKey = `${prefix}-${newCounter}`;
 
@@ -836,12 +841,8 @@ app.get('/api/stats', authenticate, async (req, res) => {
 
 // ============== ADMIN STATS ==============
 
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', authenticate, isAdmin, async (req, res) => {
     try {
-        const adminKey = req.query.key;
-        if (adminKey !== INVITE_CODE) {
-            return res.status(403).json({ error: 'Access denied' });
-        }
 
         const result = await pool.query('SELECT id, name, email, created_at FROM users ORDER BY created_at DESC');
 
