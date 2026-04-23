@@ -1596,14 +1596,59 @@
         .board-card-summary {
             font-size: 14px;
             font-weight: 500;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             line-height: 1.5;
         }
+
+        .board-card-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        .board-card-dropdowns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+
+        .board-inline-select {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 11px;
+            font-family: inherit;
+            font-weight: 600;
+            padding: 4px 20px 4px 7px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+        }
+
+        .board-inline-select:focus { outline: none; border-color: var(--accent); }
+
+        .board-inline-select.status-pill.todo     { background-color: rgba(113,113,122,0.2); color: #a1a1aa; }
+        .board-inline-select.status-pill.progress { background-color: rgba(234,179,8,0.15);  color: var(--warning); }
+        .board-inline-select.status-pill.review   { background-color: rgba(59,130,246,0.15); color: var(--info); }
+        .board-inline-select.status-pill.done     { background-color: rgba(34,197,94,0.15);  color: var(--success); }
+
+        .board-inline-select.priority-select.high   { color: var(--danger); }
+        .board-inline-select.priority-select.medium { color: var(--warning); }
+        .board-inline-select.priority-select.low    { color: var(--info); }
+
+        .board-card:has(.board-inline-select:focus) { transform: none; }
 
         .board-card-footer {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
         }
 
         .board-card-avatar {
@@ -3283,14 +3328,32 @@
         }
 
         function createBoardCard(t) {
-            const desc = t.description ? escapeHtml(t.description).substring(0, 80) + (t.description.length > 80 ? '...' : '') : '';
+            const projectOptions = projects.map(p =>
+                `<option value="${p.id}" ${parseInt(p.id) === parseInt(t.project_id) ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+            ).join('');
+            const ministryOpts = ['Citichamps','Community Bible Study','Events','General','Sunday','Young Adults','Young Couples','Youth']
+                .map(m => `<option value="${m}" ${t.ministry === m ? 'selected' : ''}>${m}</option>`).join('');
+            const desc = t.description ? escapeHtml(t.description) : '';
             return `<div class="board-card" draggable="true" ondragstart="dragStart(event,${t.id})" ondragend="dragEnd(event)" onclick="viewTask(${t.id})">
                 <div class="board-card-key" style="color: ${t.project_color || 'var(--text-muted)'};">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
-                ${desc ? `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">${desc}</div>` : ''}
-                <div style="font-size: 11px; color: var(--accent); margin-bottom: 8px;">${escapeHtml(t.ministry || 'General')}</div>
+                ${desc ? `<div class="board-card-desc">${desc}</div>` : ''}
+                <div class="board-card-dropdowns" onclick="event.stopPropagation()" ondragstart="event.stopPropagation()">
+                    <select class="board-inline-select status-pill ${t.status}" onchange="this.className='board-inline-select status-pill '+this.value; quickUpdateTask(${t.id},'status',this.value);">
+                        <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+                        <option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option>
+                        <option value="review" ${t.status==='review'?'selected':''}>For Review</option>
+                        <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+                    </select>
+                    <select class="board-inline-select priority-select ${t.priority}" onchange="this.className='board-inline-select priority-select '+this.value; quickUpdateTask(${t.id},'priority',this.value);">
+                        <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+                        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
+                        <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+                    </select>
+                    <select class="board-inline-select" onchange="quickUpdateTask(${t.id},'project_id',this.value);">${projectOptions}</select>
+                    <select class="board-inline-select" onchange="quickUpdateTask(${t.id},'ministry',this.value);">${ministryOpts}</select>
+                </div>
                 <div class="board-card-footer">
-                    <span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)}</span>
                     <div class="board-card-avatar">${getInitials(t.assignee_name || currentUser.name)}</div>
                 </div>
             </div>`;
