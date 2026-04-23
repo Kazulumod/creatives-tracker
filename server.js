@@ -399,17 +399,17 @@ app.get('/api/auth/me', authenticate, async (req, res) => {
 
 // ============== PROJECT ROUTES ==============
 
-// Get all projects for user
+// Get all projects (visible to all authenticated users)
 app.get('/api/projects', authenticate, async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT p.*, pm.role,
+            SELECT p.*,
                    (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as task_count,
-                   u.name as owner_name
+                   u.name as owner_name,
+                   pm.role
             FROM projects p
-            JOIN project_members pm ON p.id = pm.project_id
             JOIN users u ON p.owner_id = u.id
-            WHERE pm.user_id = $1
+            LEFT JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = $1
             ORDER BY p.created_at ASC
         `, [req.user.id]);
         res.json(result.rows);
@@ -418,8 +418,8 @@ app.get('/api/projects', authenticate, async (req, res) => {
     }
 });
 
-// Create project
-app.post('/api/projects', authenticate, async (req, res) => {
+// Create project (admin only)
+app.post('/api/projects', authenticate, isAdmin, async (req, res) => {
     try {
         const { name, color, ministry } = req.body;
 
@@ -569,14 +569,13 @@ app.get('/api/tasks', authenticate, async (req, res) => {
                    assignee.name as assignee_name
             FROM tasks t
             JOIN projects p ON t.project_id = p.id
-            JOIN project_members pm ON p.id = pm.project_id
             JOIN users creator ON t.creator_id = creator.id
             LEFT JOIN users assignee ON t.assignee_id = assignee.id
-            WHERE pm.user_id = $1
+            WHERE 1=1
         `;
 
-        const params = [req.user.id];
-        let paramIndex = 2;
+        const params = [];
+        let paramIndex = 1;
 
         if (project_id) {
             query += ` AND t.project_id = $${paramIndex}`;
@@ -612,12 +611,6 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 
         if (!summary || !project_id) {
             return res.status(400).json({ error: 'Summary and project are required' });
-        }
-
-        const memberCheck = await pool.query('SELECT * FROM project_members WHERE project_id = $1 AND user_id = $2',
-            [project_id, req.user.id]);
-        if (memberCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'Access denied to this project' });
         }
 
         // Get and increment task counter
