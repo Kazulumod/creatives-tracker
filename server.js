@@ -258,6 +258,18 @@ async function initDatabase() {
             )
         `);
 
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                type TEXT NOT NULL,
+                message TEXT NOT NULL,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('Database initialized');
     } finally {
         client.release();
@@ -670,11 +682,13 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 
         const task = fullTaskResult.rows[0];
 
-        // Send email notification if task is assigned
+        // Notify assignee
         if (assignee_id && task.assignee_email) {
             const creatorResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
             const assignerName = creatorResult.rows[0]?.name || 'Someone';
             sendAssignmentEmail(task.assignee_email, task.assignee_name, summary, taskKey, assignerName);
+            createNotification(assignee_id, 'assignment',
+                `${assignerName} assigned you to [${taskKey}]: ${summary}`, taskId);
         }
 
         res.status(201).json(task);
@@ -770,12 +784,16 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                     [Array.from(involvedIds)]
                 );
                 const isNewAssignee = assignee_id && String(assignee_id) !== String(task.assignee_id);
+                const changeDesc = changes.map(c => `${c.label}: ${c.value}`).join(', ');
                 for (const u of involvedResult.rows) {
                     if (isNewAssignee && String(u.id) === String(assignee_id)) {
-                        // New assignee gets an assignment email instead of a generic update
                         sendAssignmentEmail(u.email, u.name, updatedTask.summary, updatedTask.key, changerName);
+                        createNotification(u.id, 'assignment',
+                            `${changerName} assigned you to [${updatedTask.key}]: ${updatedTask.summary}`, taskId);
                     } else {
                         sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
+                        createNotification(u.id, 'task_update',
+                            `${changerName} updated [${updatedTask.key}]: ${updatedTask.summary} — ${changeDesc}`, taskId);
                     }
                 }
             }
@@ -921,6 +939,52 @@ app.get('/api/admin/projects', authenticate, isAdmin, async (req, res) => {
     }
 });
 
+// ============== NOTIFICATIONS ==============
+
+async function createNotification(userId, type, message, taskId) {
+    try {
+        await pool.query(
+            'INSERT INTO notifications (user_id, type, message, task_id) VALUES ($1, $2, $3, $4)',
+            [userId, type, message, taskId || null]
+        );
+    } catch (err) {
+        console.error('Failed to create notification:', err.message);
+    }
+}
+
+app.get('/api/notifications', authenticate, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30',
+            [req.user.id]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/notifications/read-all', authenticate, async (req, res) => {
+    try {
+        await pool.query('UPDATE notifications SET read = TRUE WHERE user_id = $1', [req.user.id]);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/notifications/:id/read', authenticate, async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2',
+            [req.params.id, req.user.id]
+        );
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ============== SEARCH USERS ==============
 
 app.get('/api/users/search', authenticate, async (req, res) => {
@@ -988,8 +1052,10 @@ app.post('/api/tasks/:id/comments', authenticate, async (req, res) => {
             const allUsers = await pool.query('SELECT id, name, email FROM users WHERE id != $1', [req.user.id]);
             for (const u of allUsers.rows) {
                 if (content.includes('@' + u.name)) {
-                    console.log(`Mention detected: @${u.name} → ${u.email}`);
+                    console.log(`Mention detected: @${u.name}`);
                     sendMentionEmail(u.email, u.name, commenterName, task.summary, task.key, content);
+                    createNotification(u.id, 'mention',
+                        `${commenterName} mentioned you in [${task.key}]: ${task.summary}`, req.params.id);
                 }
             }
         }
