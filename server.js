@@ -4,27 +4,42 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'creatives-tracker-secret-key-change-in-production';
 const INVITE_CODE = process.env.INVITE_CODE || 'CREATIVES2026';
 
-// Email Configuration
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Creatives Tracker <noreply@creativestracker.com>';
-
-let transporter = null;
-if (EMAIL_USER && EMAIL_PASS) {
-    transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: EMAIL_USER, pass: EMAIL_PASS }
-    });
-    console.log(`Email configured: ${EMAIL_USER}`);
+// Email Configuration — uses Resend (resend.com), free tier, no SMTP setup required
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+if (RESEND_API_KEY) {
+    console.log('Email configured via Resend');
 } else {
-    console.warn('Email not configured — set EMAIL_USER and EMAIL_PASS in environment variables to enable notifications');
+    console.warn('Email not configured — add RESEND_API_KEY in Render environment variables');
+}
+
+async function sendEmail(to, subject, html) {
+    if (!RESEND_API_KEY) return;
+    try {
+        const res = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'Creatives Tracker <onboarding@resend.dev>',
+                to,
+                subject,
+                html
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+        console.log(`Email sent to ${to}`);
+    } catch (err) {
+        console.error('Email failed:', err.message);
+    }
 }
 
 // ── Shared email layout ─────────────────────────────────────
@@ -60,71 +75,55 @@ function taskCard(taskKey, taskSummary) {
 }
 
 async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, taskKey, assignerName) {
-    if (!transporter) return;
-    try {
-        await transporter.sendMail({
-            from: EMAIL_FROM,
-            to: assigneeEmail,
-            subject: `[${taskKey}] You've been assigned: ${taskSummary}`,
-            html: emailLayout(`
-                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${assigneeName}</strong>,</p>
-                <p style="color:#6b7280;margin:4px 0 0;">
-                    <strong>${assignerName}</strong> assigned you a task:
-                </p>
-                ${taskCard(taskKey, taskSummary)}
-            `)
-        });
-        console.log(`Assignment email → ${assigneeEmail}`);
-    } catch (err) { console.error('Assignment email failed:', err.message); }
+    await sendEmail(
+        assigneeEmail,
+        `[${taskKey}] You've been assigned: ${taskSummary}`,
+        emailLayout(`
+            <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${assigneeName}</strong>,</p>
+            <p style="color:#6b7280;margin:4px 0 0;"><strong>${assignerName}</strong> assigned you a task:</p>
+            ${taskCard(taskKey, taskSummary)}
+        `)
+    );
 }
 
 async function sendMentionEmail(toEmail, toName, mentionedByName, taskSummary, taskKey, commentText) {
-    if (!transporter) return;
     const preview = commentText.length > 200 ? commentText.slice(0, 200) + '…' : commentText;
-    try {
-        await transporter.sendMail({
-            from: EMAIL_FROM,
-            to: toEmail,
-            subject: `[${taskKey}] ${mentionedByName} mentioned you`,
-            html: emailLayout(`
-                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
-                <p style="color:#6b7280;margin:4px 0 16px;">
-                    <strong>${mentionedByName}</strong> mentioned you in a comment on:
-                </p>
-                ${taskCard(taskKey, taskSummary)}
-                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:14px 18px;
-                             color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap;">
-                    ${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-                </div>
-            `)
-        });
-        console.log(`Mention email → ${toEmail}`);
-    } catch (err) { console.error('Mention email failed:', err.message); }
+    await sendEmail(
+        toEmail,
+        `[${taskKey}] ${mentionedByName} mentioned you`,
+        emailLayout(`
+            <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
+            <p style="color:#6b7280;margin:4px 0 16px;">
+                <strong>${mentionedByName}</strong> mentioned you in a comment on:
+            </p>
+            ${taskCard(taskKey, taskSummary)}
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:14px 18px;
+                         color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap;">
+                ${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+            </div>
+        `)
+    );
 }
 
 async function sendTaskUpdateEmail(toEmail, toName, changerName, taskSummary, taskKey, changes) {
-    if (!transporter || !changes.length) return;
+    if (!changes.length) return;
     const changeRows = changes
-        .map(c => `<tr><td style="padding:6px 0;color:#6b7280;font-size:13px;width:110px;
-                        vertical-align:top;">${c.label}</td>
-                       <td style="padding:6px 0;color:#111827;font-size:13px;">${c.value}</td></tr>`)
-        .join('');
-    try {
-        await transporter.sendMail({
-            from: EMAIL_FROM,
-            to: toEmail,
-            subject: `[${taskKey}] Task updated: ${taskSummary}`,
-            html: emailLayout(`
-                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
-                <p style="color:#6b7280;margin:4px 0 16px;">
-                    <strong>${changerName}</strong> updated a task you're involved in:
-                </p>
-                ${taskCard(taskKey, taskSummary)}
-                <table style="width:100%;border-collapse:collapse;margin-top:4px;">${changeRows}</table>
-            `)
-        });
-        console.log(`Update email → ${toEmail}`);
-    } catch (err) { console.error('Task update email failed:', err.message); }
+        .map(c => `<tr>
+            <td style="padding:6px 0;color:#6b7280;font-size:13px;width:110px;vertical-align:top;">${c.label}</td>
+            <td style="padding:6px 0;color:#111827;font-size:13px;">${c.value}</td>
+        </tr>`).join('');
+    await sendEmail(
+        toEmail,
+        `[${taskKey}] Task updated: ${taskSummary}`,
+        emailLayout(`
+            <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
+            <p style="color:#6b7280;margin:4px 0 16px;">
+                <strong>${changerName}</strong> updated a task you're involved in:
+            </p>
+            ${taskCard(taskKey, taskSummary)}
+            <table style="width:100%;border-collapse:collapse;margin-top:4px;">${changeRows}</table>
+        `)
+    );
 }
 
 function detectTaskChanges(old, body) {
