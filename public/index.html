@@ -1374,11 +1374,13 @@
             gap: 6px;
             font-size: 13px;
             font-weight: 500;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
         }
 
-        .priority-badge.high { color: var(--danger); }
-        .priority-badge.medium { color: var(--warning); }
-        .priority-badge.low { color: var(--info); }
+        .priority-badge.high { color: var(--danger); background: rgba(239, 68, 68, 0.12); }
+        .priority-badge.medium { color: var(--warning); background: rgba(234, 179, 8, 0.12); }
+        .priority-badge.low { color: var(--info); background: rgba(59, 130, 246, 0.12); }
 
         .project-tag {
             display: inline-flex;
