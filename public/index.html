@@ -1322,8 +1322,8 @@
             text-overflow: ellipsis;
         }
 
-        /* Due date input */
-        .inline-date {
+        /* Due date button */
+        .inline-date-btn {
             width: 100%;
             padding: 5px 8px;
             border-radius: 6px;
@@ -1334,23 +1334,17 @@
             font-weight: 500;
             font-family: inherit;
             cursor: pointer;
+            text-align: left;
             transition: background-color 0.15s, border-color 0.15s;
-            color-scheme: dark;
         }
 
-        .inline-date:hover {
+        .inline-date-btn:hover {
             background-color: rgba(255,255,255,0.11);
             border-color: rgba(255,255,255,0.28);
         }
 
-        .inline-date:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-
-        .inline-date.overdue { color: var(--danger); border-color: rgba(239,68,68,0.3); background-color: rgba(239,68,68,0.08); }
-        .inline-date.soon    { color: var(--warning); border-color: rgba(234,179,8,0.3); background-color: rgba(234,179,8,0.08); }
+        .inline-date-btn.overdue { color: var(--danger); border-color: rgba(239,68,68,0.3); background-color: rgba(239,68,68,0.08); }
+        .inline-date-btn.soon    { color: var(--warning); border-color: rgba(234,179,8,0.3); background-color: rgba(234,179,8,0.08); }
 
         .inline-select {
             appearance: none;
@@ -3231,6 +3225,15 @@
             renderBoardView(filtered);
         }
 
+        function updateRowDate(input, taskId) {
+            const btn = input.previousElementSibling;
+            const val = input.value;
+            btn.innerHTML = val ? formatDate(val) : '<span style="color:var(--text-muted);">Set date</span>';
+            const dc = getDueClass(val);
+            btn.className = 'inline-date-btn' + (dc ? ' ' + dc : '');
+            quickUpdateTask(taskId, 'due_date', val);
+        }
+
         function getDueClass(due) {
             if (!due) return '';
             const today = new Date(); today.setHours(0,0,0,0);
@@ -3291,8 +3294,11 @@
                            <span class="assignee-name-sm">${escapeHtml(t.assignee_name)}</span>`
                         : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
                 </div>
-                <div style="padding:0 10px;">
-                    <input type="date" class="inline-date ${dueClass}" value="${t.due_date ? t.due_date.split('T')[0] : ''}" onchange="quickUpdateTask(${t.id},'due_date',this.value)" onclick="event.stopPropagation(); try{this.showPicker()}catch(e){}">
+                <div style="padding:0 10px; position:relative;">
+                    <button type="button" class="inline-date-btn ${dueClass}" onclick="event.stopPropagation(); this.nextElementSibling.showPicker();">
+                        ${t.due_date ? formatDate(t.due_date) : '<span style="color:var(--text-muted);">Set date</span>'}
+                    </button>
+                    <input type="date" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" value="${t.due_date ? t.due_date.split('T')[0] : ''}" onchange="updateRowDate(this,${t.id})">
                 </div>
                 <div style="padding:0 10px;">
                     <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id},'priority',this.value)">
