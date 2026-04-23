@@ -1223,7 +1223,7 @@
 
         .table-header {
             display: grid;
-            grid-template-columns: 36px 1fr 1fr 2fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
+            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
             gap: 0;
             padding: 0 16px;
             background: rgba(30, 30, 35, 0.85);
@@ -1243,7 +1243,7 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 36px 1fr 1fr 2fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
+            grid-template-columns: 36px 1fr 0.6fr 1fr 1.8fr 1.1fr 1.2fr 1fr 0.9fr 1fr 46px;
             gap: 0;
             padding: 0 16px;
             border-bottom: 1px solid var(--border-light);
@@ -1924,19 +1924,23 @@
 
             .table-header,
             .task-row {
-                grid-template-columns: 40px 80px 1fr 120px 44px;
+                grid-template-columns: 40px 70px 1fr 120px 44px;
             }
 
             .table-header > *:nth-child(2),
+            .table-header > *:nth-child(4),
             .table-header > *:nth-child(6),
             .table-header > *:nth-child(7),
             .table-header > *:nth-child(8),
             .table-header > *:nth-child(9),
+            .table-header > *:nth-child(10),
             .task-row > *:nth-child(2),
+            .task-row > *:nth-child(4),
             .task-row > *:nth-child(6),
             .task-row > *:nth-child(7),
             .task-row > *:nth-child(8),
-            .task-row > *:nth-child(9) {
+            .task-row > *:nth-child(9),
+            .task-row > *:nth-child(10) {
                 display: none;
             }
 
@@ -3241,8 +3245,10 @@
                     <span style="font-size:12px;font-weight:600;color:${t.project_color||'var(--text-secondary)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;" title="${escapeHtml(t.project_name||'')}">${escapeHtml(t.project_name||'—')}</span>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
-                    <div style="color:${t.project_color || 'var(--accent)'}; font-size:12px; font-weight:700; white-space:nowrap;">${t.key}</div>
-                    <div style="font-size:11px; color:var(--text-secondary); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(t.summary)}">${escapeHtml(t.summary)}</div>
+                    <span style="color:${t.project_color || 'var(--accent)'}; font-size:12px; font-weight:700; white-space:nowrap;">${t.key}</span>
+                </div>
+                <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
+                    <span style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHtml(t.summary)}">${escapeHtml(t.summary)}</span>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
                     ${t.description
@@ -3315,6 +3321,7 @@
                     <div class="table-header">
                         <span></span>
                         <span>Project</span>
+                        <span>ID</span>
                         <span>Task</span>
                         <span>Summary</span>
                         <span>Status</span>
