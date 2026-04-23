@@ -2509,6 +2509,7 @@
             color: var(--text-primary);
             border-bottom: 1px solid var(--border-light);
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .admin-table tr:last-child td { border-bottom: none; }
@@ -2516,10 +2517,11 @@
         .admin-table tr:hover td { background: rgba(255,255,255,0.03); }
 
         .admin-action-btn {
-            padding: 5px 10px;
+            padding: 7px 0;
+            width: 110px;
             border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
-            background: transparent;
+            border: none;
+            background: var(--bg-input);
             color: var(--text-secondary);
             font-size: var(--font-sm);
             cursor: pointer;
@@ -2528,11 +2530,14 @@
             margin-right: 4px;
         }
 
-        .admin-action-btn:hover { background: var(--bg-input); color: var(--text-primary); }
-        .admin-action-btn.danger { color: var(--danger); border-color: rgba(239,68,68,0.3); }
-        .admin-action-btn.danger:hover { background: rgba(239,68,68,0.1); }
-        .admin-action-btn.promote { color: var(--success); border-color: rgba(34,197,94,0.3); }
-        .admin-action-btn.promote:hover { background: rgba(34,197,94,0.1); }
+        .admin-action-btn { font-weight: 600; text-align: center; }
+        .admin-action-btn.danger { background: #ef4444; color: #fff; }
+        .admin-action-btn.danger:hover { background: #dc2626; }
+        .admin-action-btn.promote { background: #22c55e; color: #fff; }
+        .admin-action-btn.promote:hover { background: #16a34a; }
+        .admin-action-btn.revoke { background: #f59e0b; color: #fff; }
+        .admin-action-btn.revoke:hover { background: #d97706; }
+        .admin-actions-cell { display: flex; gap: 8px; align-items: center; }
 
         /* Drag and Drop */
         .board-card { cursor: grab; }
@@ -3285,7 +3290,7 @@
     <!-- Settings Modal -->
     <!-- Admin Panel Modal -->
     <div class="modal-overlay" id="adminModal">
-        <div class="modal" style="max-width: 780px;">
+        <div class="modal" style="max-width: 960px;">
             <button class="modal-close" onclick="closeAdminPanel()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -4820,10 +4825,12 @@
                                     <td style="color: var(--text-secondary);">${u.task_count}</td>
                                     <td>
                                         ${u.id !== currentUser.id ? `
-                                            <button class="admin-action-btn ${u.is_admin ? '' : 'promote'}" onclick="adminToggleAdmin(${u.id}, '${escapeHtml(u.name)}', ${u.is_admin})">
-                                                ${u.is_admin ? 'Revoke Admin' : 'Make Admin'}
-                                            </button>
-                                            <button class="admin-action-btn danger" onclick="adminDeleteUser(${u.id}, '${escapeHtml(u.name)}')">Delete</button>
+                                            <div class="admin-actions-cell">
+                                                <button class="admin-action-btn ${u.is_admin ? 'revoke' : 'promote'}" onclick="adminToggleAdmin(${u.id}, '${escapeHtml(u.name)}', ${u.is_admin})">
+                                                    ${u.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                                                </button>
+                                                <button class="admin-action-btn danger" onclick="adminDeleteUser(${u.id}, '${escapeHtml(u.name)}')">Delete</button>
+                                            </div>
                                         ` : '<span style="color: var(--text-muted); font-size: var(--font-sm);">You</span>'}
                                     </td>
                                 </tr>
