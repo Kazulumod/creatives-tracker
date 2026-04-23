@@ -338,24 +338,6 @@ app.post('/api/auth/signup', async (req, res) => {
         );
         const user = userResult.rows[0];
 
-        // Create default projects for the user
-        const defaultProjects = [
-            { name: 'Personal', color: '#8b5cf6' },
-            { name: 'Work', color: '#10b981' },
-            { name: 'Ideas', color: '#f59e0b' }
-        ];
-
-        for (const project of defaultProjects) {
-            const projResult = await pool.query(
-                'INSERT INTO projects (name, color, owner_id) VALUES ($1, $2, $3) RETURNING id',
-                [project.name, project.color, user.id]
-            );
-            const projId = projResult.rows[0].id;
-            await pool.query('INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3)',
-                [projId, user.id, 'owner']);
-            await pool.query('INSERT INTO task_counter (project_id, counter) VALUES ($1, 0)', [projId]);
-        }
-
         // Generate token
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
