@@ -3080,7 +3080,7 @@
             return `
             <div class="task-row">
                 <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
-                <span class="task-key" onclick="viewTask(${t.id})">${t.key}</span>
+                <span class="task-key" style="color: ${t.project_color || 'var(--accent)'};" onclick="viewTask(${t.id})">${t.key}</span>
                 <span class="task-summary" onclick="viewTask(${t.id})">${escapeHtml(t.summary)}</span>
                 <span class="task-desc-cell" onclick="viewTask(${t.id})">${desc}</span>
                 <select class="inline-select status-select ${t.status}" onchange="this.className='inline-select status-select '+this.value; quickUpdateTask(${t.id}, 'status', this.value)">
@@ -3191,7 +3191,7 @@
         function createBoardCard(t) {
             const desc = t.description ? escapeHtml(t.description).substring(0, 80) + (t.description.length > 80 ? '...' : '') : '';
             return `<div class="board-card" draggable="true" ondragstart="dragStart(event,${t.id})" ondragend="dragEnd(event)" onclick="viewTask(${t.id})">
-                <div class="board-card-key">${t.key}</div>
+                <div class="board-card-key" style="color: ${t.project_color || 'var(--text-muted)'};">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
                 ${desc ? `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">${desc}</div>` : ''}
                 <div style="font-size: 11px; color: var(--accent); margin-bottom: 8px;">${escapeHtml(t.ministry || 'General')}</div>
