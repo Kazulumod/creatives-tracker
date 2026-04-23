@@ -1821,6 +1821,16 @@
         .admin-action-btn.danger:hover { background: rgba(239,68,68,0.1); }
         .admin-action-btn.promote { color: var(--success); border-color: rgba(34,197,94,0.3); }
         .admin-action-btn.promote:hover { background: rgba(34,197,94,0.1); }
+
+        /* Drag and Drop */
+        .board-card { cursor: grab; }
+        .board-card:active { cursor: grabbing; }
+        .board-card.is-dragging { opacity: 0.35; transform: scale(0.97); }
+        .board-column.drop-target {
+            background: rgba(132, 204, 22, 0.06);
+            outline: 2px dashed rgba(132, 204, 22, 0.5);
+            outline-offset: -4px;
+        }
     </style>
 </head>
 <body>
@@ -2287,28 +2297,28 @@
                 </div>
 
                 <div class="board-view active" id="boardView">
-                    <div class="board-column">
+                    <div class="board-column" ondragover="dragOver(event)" ondrop="drop(event,'todo')" ondragenter="dragEnter(event,this)" ondragleave="dragLeave(event,this)">
                         <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--text-muted);"></span> To Do</span>
                             <span class="column-count" id="board-todo-count">0</span>
                         </div>
                         <div id="board-todo"></div>
                     </div>
-                    <div class="board-column">
+                    <div class="board-column" ondragover="dragOver(event)" ondrop="drop(event,'progress')" ondragenter="dragEnter(event,this)" ondragleave="dragLeave(event,this)">
                         <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--warning);"></span> In Progress</span>
                             <span class="column-count" id="board-progress-count">0</span>
                         </div>
                         <div id="board-progress"></div>
                     </div>
-                    <div class="board-column">
+                    <div class="board-column" ondragover="dragOver(event)" ondrop="drop(event,'review')" ondragenter="dragEnter(event,this)" ondragleave="dragLeave(event,this)">
                         <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--info);"></span> For Review</span>
                             <span class="column-count" id="board-review-count">0</span>
                         </div>
                         <div id="board-review"></div>
                     </div>
-                    <div class="board-column">
+                    <div class="board-column" ondragover="dragOver(event)" ondrop="drop(event,'done')" ondragenter="dragEnter(event,this)" ondragleave="dragLeave(event,this)">
                         <div class="column-header">
                             <span class="column-title"><span class="status-dot" style="background: var(--success);"></span> Done</span>
                             <span class="column-count" id="board-done-count">0</span>
@@ -3061,7 +3071,7 @@
 
         function createBoardCard(t) {
             const desc = t.description ? escapeHtml(t.description).substring(0, 80) + (t.description.length > 80 ? '...' : '') : '';
-            return `<div class="board-card" onclick="viewTask(${t.id})">
+            return `<div class="board-card" draggable="true" ondragstart="dragStart(event,${t.id})" ondragend="dragEnd(event)" onclick="viewTask(${t.id})">
                 <div class="board-card-key">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
                 ${desc ? `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4;">${desc}</div>` : ''}
@@ -3238,6 +3248,44 @@
             document.getElementById('boardViewBtn').classList.toggle('active', view === 'board');
             document.getElementById('listView').classList.toggle('hidden', view !== 'list');
             document.getElementById('boardView').classList.toggle('active', view === 'board');
+        }
+
+        // Drag and Drop
+        let draggingTaskId = null;
+
+        function dragStart(e, taskId) {
+            draggingTaskId = taskId;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => e.target.classList.add('is-dragging'), 0);
+        }
+
+        function dragEnd(e) {
+            e.target.classList.remove('is-dragging');
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function dragEnter(e, col) {
+            e.preventDefault();
+            col.classList.add('drop-target');
+        }
+
+        function dragLeave(e, col) {
+            if (!col.contains(e.relatedTarget)) {
+                col.classList.remove('drop-target');
+            }
+        }
+
+        async function drop(e, status) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drop-target');
+            if (draggingTaskId === null) return;
+            const id = draggingTaskId;
+            draggingTaskId = null;
+            await quickUpdateTask(id, 'status', status);
         }
 
         // Utils
