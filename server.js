@@ -73,7 +73,7 @@ const pool = new Pool({
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize Database
