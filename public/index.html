@@ -1490,15 +1490,15 @@
 
         .assignee-picker-list {
             display: none;
-            position: absolute;
-            top: calc(100% + 4px);
+            position: fixed;
+            top: 0;
             left: 0;
             min-width: 190px;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-card);
-            z-index: 250;
+            z-index: 9999;
             overflow-y: auto;
             max-height: 220px;
         }
@@ -4624,7 +4624,13 @@
             const list = el.querySelector('.assignee-picker-list');
             const isOpen = list.classList.contains('show');
             document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
-            if (!isOpen) list.classList.add('show');
+            if (!isOpen) {
+                const rect = el.getBoundingClientRect();
+                list.style.top = (rect.bottom + 4) + 'px';
+                list.style.left = rect.left + 'px';
+                list.style.minWidth = Math.max(190, rect.width) + 'px';
+                list.classList.add('show');
+            }
         }
 
         async function pickAssignee(taskId, userId, pickerEl) {
@@ -4637,11 +4643,10 @@
             const isOpen = list.classList.contains('show');
             document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
             if (!isOpen) {
-                // Highlight currently selected item
-                const currentId = document.getElementById('taskAssigneeId').value;
-                list.querySelectorAll('.assignee-picker-item').forEach(item => {
-                    item.classList.toggle('selected', item.dataset.uid === String(currentId));
-                });
+                const rect = el.getBoundingClientRect();
+                list.style.top = (rect.bottom + 4) + 'px';
+                list.style.left = rect.left + 'px';
+                list.style.minWidth = Math.max(190, rect.width) + 'px';
                 list.classList.add('show');
             }
         }
