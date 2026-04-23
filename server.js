@@ -191,9 +191,17 @@ const authenticate = (req, res, next) => {
     }
 };
 
-const isAdmin = (req, res, next) => {
-    if (!req.user.is_admin) return res.status(403).json({ error: 'Admin access required' });
-    next();
+const isAdmin = async (req, res, next) => {
+    try {
+        const result = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+        if (!result.rows[0]?.is_admin) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        req.user.is_admin = true;
+        next();
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
 };
 
 // ============== AUTH ROUTES ==============
@@ -446,7 +454,9 @@ app.delete('/api/projects/:id', authenticate, async (req, res) => {
     try {
         const projectId = req.params.id;
 
-        if (!req.user.is_admin) {
+        const adminCheck = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+        const userIsAdmin = adminCheck.rows[0]?.is_admin;
+        if (!userIsAdmin) {
             const projectCheck = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner_id = $2',
                 [projectId, req.user.id]);
             if (projectCheck.rows.length === 0) {
