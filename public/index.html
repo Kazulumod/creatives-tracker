@@ -3292,7 +3292,7 @@
                         : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
                 </div>
                 <div style="padding:0 10px;">
-                    <input type="date" class="inline-date ${dueClass}" value="${t.due_date ? t.due_date.split('T')[0] : ''}" onchange="quickUpdateTask(${t.id},'due_date',this.value)" onclick="event.stopPropagation()">
+                    <input type="date" class="inline-date ${dueClass}" value="${t.due_date ? t.due_date.split('T')[0] : ''}" onchange="quickUpdateTask(${t.id},'due_date',this.value)" onclick="event.stopPropagation(); try{this.showPicker()}catch(e){}">
                 </div>
                 <div style="padding:0 10px;">
                     <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id},'priority',this.value)">
