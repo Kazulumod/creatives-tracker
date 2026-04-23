@@ -234,7 +234,7 @@
         .nav-link {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 14px;
+            font-size: var(--font-md);
             font-weight: 500;
             transition: var(--transition);
         }
@@ -256,7 +256,7 @@
             justify-content: center;
             gap: 8px;
             padding: 12px 24px;
-            font-size: 14px;
+            font-size: var(--font-md);
             font-weight: 600;
             border-radius: var(--radius-full);
             border: none;
@@ -302,7 +302,7 @@
 
         .btn-lg {
             padding: 16px 32px;
-            font-size: 16px;
+            font-size: var(--font-lg);
         }
 
         .btn-icon {
@@ -689,7 +689,7 @@
         }
 
         .modal-subtitle {
-            font-size: 14px;
+            font-size: var(--font-md);
             color: var(--text-secondary);
         }
 
@@ -699,7 +699,7 @@
             color: #fca5a5;
             padding: 12px 16px;
             border-radius: var(--radius-md);
-            font-size: 13px;
+            font-size: var(--font-base);
             margin-bottom: 20px;
             display: none;
         }
@@ -721,7 +721,7 @@
 
         .form-label {
             display: block;
-            font-size: 13px;
+            font-size: var(--font-base);
             font-weight: 500;
             color: var(--text-secondary);
             margin-bottom: 8px;
@@ -733,7 +733,7 @@
             background: var(--bg-input);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            font-size: 14px;
+            font-size: var(--font-md);
             color: var(--text-primary);
             transition: var(--transition);
             font-family: inherit;
@@ -760,7 +760,7 @@
             align-items: center;
             margin: 24px 0;
             color: var(--text-muted);
-            font-size: 12px;
+            font-size: var(--font-sm);
         }
 
         .auth-divider::before,
@@ -778,7 +778,7 @@
         .auth-footer {
             text-align: center;
             margin-top: 24px;
-            font-size: 14px;
+            font-size: var(--font-md);
             color: var(--text-secondary);
         }
 
@@ -873,7 +873,7 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 14px;
+            font-size: var(--font-md);
             cursor: pointer;
             border: 2px solid transparent;
             transition: var(--transition);
@@ -921,7 +921,7 @@
         }
 
         .user-dropdown-header .email {
-            font-size: 12px;
+            font-size: var(--font-sm);
             color: var(--text-muted);
         }
 
@@ -937,7 +937,7 @@
             border: none;
             background: none;
             width: 100%;
-            font-size: 13px;
+            font-size: var(--font-base);
             font-family: inherit;
             text-align: left;
         }
@@ -982,7 +982,7 @@
         }
 
         .sidebar-title {
-            font-size: 11px;
+            font-size: var(--font-xs);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -1025,7 +1025,7 @@
             background: var(--bg-input);
             padding: 2px 10px;
             border-radius: var(--radius-full);
-            font-size: 12px;
+            font-size: var(--font-sm);
             font-weight: 600;
         }
 
@@ -1042,7 +1042,7 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 13px;
+            font-size: var(--font-base);
             color: var(--bg-dark);
             flex-shrink: 0;
         }
@@ -1059,7 +1059,7 @@
             border: 1px dashed var(--border-color);
             background: none;
             width: 100%;
-            font-size: 13px;
+            font-size: var(--font-base);
             font-family: inherit;
         }
 
@@ -1085,7 +1085,7 @@
         }
 
         .page-title {
-            font-size: 28px;
+            font-size: var(--font-3xl);
             font-weight: 700;
         }
 
@@ -1150,7 +1150,7 @@
         }
 
         .stat-label {
-            font-size: 13px;
+            font-size: var(--font-base);
             color: var(--text-muted);
             margin-top: 4px;
         }
@@ -1174,7 +1174,7 @@
             background: var(--bg-input);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            font-size: 13px;
+            font-size: var(--font-base);
             color: var(--text-primary);
             cursor: pointer;
             transition: var(--transition);
@@ -1205,7 +1205,7 @@
             background: transparent;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 13px;
+            font-size: var(--font-base);
             color: var(--text-muted);
             transition: var(--transition);
             font-family: inherit;
@@ -1321,7 +1321,7 @@
             border-radius: 50%;
             background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
             color: white;
-            font-size: 10px;
+            font-size: var(--font-xs);
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -1345,7 +1345,7 @@
             border: 1px solid rgba(255,255,255,0.14);
             background-color: rgba(255,255,255,0.06);
             color: var(--text-secondary);
-            font-size: 12px;
+            font-size: var(--font-sm);
             font-weight: 500;
             font-family: inherit;
             cursor: pointer;
@@ -1436,7 +1436,7 @@
 
         .task-key {
             font-weight: 600;
-            font-size: 13px;
+            font-size: var(--font-base);
             color: var(--accent);
             cursor: pointer;
         }
@@ -1446,7 +1446,7 @@
         }
 
         .task-summary {
-            font-size: 14px;
+            font-size: var(--font-md);
             font-weight: 500;
             color: var(--text-primary);
             white-space: nowrap;
@@ -1466,7 +1466,7 @@
             gap: 6px;
             padding: 6px 12px;
             border-radius: var(--radius-full);
-            font-size: 12px;
+            font-size: var(--font-sm);
             font-weight: 600;
             width: fit-content;
         }
@@ -1502,7 +1502,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 13px;
+            font-size: var(--font-base);
             font-weight: 500;
             padding: 4px 10px;
             border-radius: var(--radius-sm);
@@ -1519,7 +1519,7 @@
             padding: 6px 12px;
             background: var(--bg-input);
             border-radius: var(--radius-full);
-            font-size: 12px;
+            font-size: var(--font-sm);
             color: var(--text-secondary);
         }
 
@@ -1588,7 +1588,7 @@
         }
 
         .task-detail-key {
-            font-size: 13px;
+            font-size: var(--font-base);
             font-weight: 700;
             letter-spacing: 0.3px;
         }
@@ -1621,7 +1621,7 @@
         }
 
         .task-edit-input {
-            width: 100%; font-size: 22px; font-weight: 700; line-height: 1.4;
+            width: 100%; font-size: var(--font-2xl); font-weight: 700; line-height: 1.4;
             background: var(--bg-input); border: 1px solid var(--accent);
             border-radius: var(--radius-sm); color: var(--text-primary);
             padding: 8px 12px; font-family: inherit; margin-bottom: 24px;
@@ -1630,7 +1630,7 @@
         .task-edit-input:focus { outline: none; }
 
         .task-edit-textarea {
-            width: 100%; min-height: 120px; font-size: 14px; line-height: 1.75;
+            width: 100%; min-height: 120px; font-size: var(--font-md); line-height: 1.75;
             background: var(--bg-input); border: 1px solid var(--accent);
             border-radius: var(--radius-sm); color: var(--text-secondary);
             padding: 10px 12px; font-family: inherit; resize: vertical;
@@ -1670,7 +1670,7 @@
             width: 32px; height: 32px; border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--accent-light));
             display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+            font-size: var(--font-xs); font-weight: 700; color: white; flex-shrink: 0;
         }
 
         .comment-input-wrapper {
@@ -1773,14 +1773,14 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: var(--font-md);
         }
 
         .column-count {
             background: var(--bg-input);
             padding: 4px 10px;
             border-radius: var(--radius-full);
-            font-size: 12px;
+            font-size: var(--font-sm);
             font-weight: 600;
         }
 
@@ -1874,7 +1874,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: var(--font-xs);
             font-weight: 700;
         }
 
@@ -1914,7 +1914,7 @@
         }
 
         .task-group-title {
-            font-size: 13px;
+            font-size: var(--font-base);
             font-weight: 600;
             color: var(--text-primary);
         }
@@ -1924,7 +1924,7 @@
         }
 
         .task-group-count {
-            font-size: 11px;
+            font-size: var(--font-xs);
             font-weight: 600;
             padding: 2px 8px;
             border-radius: var(--radius-full);
@@ -1985,7 +1985,7 @@
         }
 
         .empty-state h3 {
-            font-size: 18px;
+            font-size: var(--font-xl);
             font-weight: 600;
             margin-bottom: 8px;
         }
@@ -2025,7 +2025,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: var(--font-base);
             font-weight: 700;
         }
 
@@ -2034,12 +2034,12 @@
         }
 
         .member-email {
-            font-size: 12px;
+            font-size: var(--font-sm);
             color: var(--text-muted);
         }
 
         .member-role {
-            font-size: 11px;
+            font-size: var(--font-xs);
             padding: 4px 10px;
             background: var(--bg-card);
             border-radius: var(--radius-full);
@@ -2161,7 +2161,7 @@
 
         /* Admin Panel */
         .admin-badge {
-            font-size: 10px;
+            font-size: var(--font-xs);
             font-weight: 700;
             letter-spacing: 0.5px;
             padding: 2px 7px;
@@ -2185,7 +2185,7 @@
             border: none;
             border-bottom: 2px solid transparent;
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: var(--font-md);
             font-weight: 500;
             cursor: pointer;
             margin-bottom: -1px;
@@ -2201,7 +2201,7 @@
         .admin-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: var(--font-base);
         }
 
         .admin-table th {
@@ -2209,7 +2209,7 @@
             padding: 10px 14px;
             color: var(--text-muted);
             font-weight: 600;
-            font-size: 11px;
+            font-size: var(--font-xs);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border-color);
@@ -2232,7 +2232,7 @@
             border: 1px solid var(--border-color);
             background: transparent;
             color: var(--text-secondary);
-            font-size: 12px;
+            font-size: var(--font-sm);
             cursor: pointer;
             font-family: inherit;
             transition: var(--transition);
@@ -2832,11 +2832,11 @@
                 <span class="task-detail-key" id="viewTaskKey"></span>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <!-- View mode -->
-                    <button id="tdEditBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="enterTaskEditMode()">Edit</button>
+                    <button id="tdEditBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:var(--font-sm);" onclick="enterTaskEditMode()">Edit</button>
                     <!-- Edit mode (hidden by default) -->
-                    <button id="tdSaveBtn" class="btn btn-primary" style="padding:6px 14px;font-size:12px;display:none;" onclick="saveTaskEdits()">Save changes</button>
-                    <button id="tdDeleteBtn" class="btn" style="padding:6px 14px;font-size:12px;color:var(--danger);border-color:rgba(239,68,68,0.4);display:none;" onclick="deleteFromView()">Delete</button>
-                    <button id="tdCancelBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;display:none;" onclick="cancelTaskEdits()">Cancel</button>
+                    <button id="tdSaveBtn" class="btn btn-primary" style="padding:6px 14px;font-size:var(--font-sm);display:none;" onclick="saveTaskEdits()">Save changes</button>
+                    <button id="tdDeleteBtn" class="btn" style="padding:6px 14px;font-size:var(--font-sm);color:var(--danger);border-color:rgba(239,68,68,0.4);display:none;" onclick="deleteFromView()">Delete</button>
+                    <button id="tdCancelBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:var(--font-sm);display:none;" onclick="cancelTaskEdits()">Cancel</button>
                     <button class="icon-btn" onclick="closeViewModal()" title="Close">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -2852,7 +2852,7 @@
                     <div class="task-detail-section">
                         <div class="td-label">Description</div>
                         <!-- View mode -->
-                        <p id="viewTaskDescription" style="color:var(--text-secondary);line-height:1.75;font-size:14px;white-space:pre-wrap;"></p>
+                        <p id="viewTaskDescription" style="color:var(--text-secondary);line-height:1.75;font-size:var(--font-md);white-space:pre-wrap;"></p>
                         <!-- Edit mode (hidden) -->
                         <textarea id="editTaskDescription" class="task-edit-textarea" style="display:none;" placeholder="Add a description…"></textarea>
                     </div>
@@ -2872,7 +2872,7 @@
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
                                             Attach files (JPEG, PNG)
                                         </label>
-                                        <button class="btn btn-primary" style="padding:5px 16px;font-size:12px;" onclick="submitComment()">Save</button>
+                                        <button class="btn btn-primary" style="padding:5px 16px;font-size:var(--font-sm);" onclick="submitComment()">Save</button>
                                     </div>
                                 </div>
                                 <div id="mentionDropdown" class="mention-dropdown" style="display:none;bottom:100%;left:0;"></div>
@@ -2989,13 +2989,13 @@
                 <!-- Users Tab -->
                 <div id="adminUsersTab">
                     <div id="adminUsersContent" style="overflow-x: auto;">
-                        <p style="color: var(--text-muted); font-size: 13px;">Loading users...</p>
+                        <p style="color: var(--text-muted); font-size: var(--font-base);">Loading users...</p>
                     </div>
                 </div>
                 <!-- Projects Tab -->
                 <div id="adminProjectsTab" style="display: none;">
                     <div id="adminProjectsContent" style="overflow-x: auto;">
-                        <p style="color: var(--text-muted); font-size: 13px;">Loading projects...</p>
+                        <p style="color: var(--text-muted); font-size: var(--font-base);">Loading projects...</p>
                     </div>
                 </div>
             </div>
@@ -3020,7 +3020,7 @@
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                         </svg>
-                        <span style="font-size: 13px; font-weight: 500;">Dark</span>
+                        <span style="font-size: var(--font-base); font-weight: 500;">Dark</span>
                     </button>
                     <button class="theme-btn" id="themeLight" onclick="setTheme('light')" style="flex: 1; padding: 16px; border-radius: var(--radius-md); border: 2px solid var(--border-color); background: #f8fafc; color: #0f172a; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: var(--transition);">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3030,7 +3030,7 @@
                             <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                         </svg>
-                        <span style="font-size: 13px; font-weight: 500;">Light</span>
+                        <span style="font-size: var(--font-base); font-weight: 500;">Light</span>
                     </button>
                 </div>
             </div>
@@ -3273,7 +3273,7 @@
                         <div class="project-icon" style="background: ${p.color};">${p.name.charAt(0).toUpperCase()}</div>
                         <div style="display: flex; flex-direction: column;">
                             <span>${escapeHtml(p.name)}</span>
-                            <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(p.ministry || 'General')}</span>
+                            <span style="font-size: var(--font-xs); color: var(--text-muted);">${escapeHtml(p.ministry || 'General')}</span>
                         </div>
                     </div>
                     ${p.role === 'owner' ? `
@@ -3500,15 +3500,15 @@
                     </select>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
-                    <span style="color:${t.project_color || 'var(--accent)'}; font-size:12px; font-weight:700; white-space:nowrap;">${t.key}</span>
+                    <span style="color:${t.project_color || 'var(--accent)'}; font-size:var(--font-sm); font-weight:700; white-space:nowrap;">${t.key}</span>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
-                    <span style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHtml(t.summary)}">${escapeHtml(t.summary)}</span>
+                    <span style="font-size:var(--font-base); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHtml(t.summary)}">${escapeHtml(t.summary)}</span>
                 </div>
                 <div style="padding:6px 10px; cursor:pointer;" onclick="viewTask(${t.id})">
                     ${t.description
-                        ? `<span style="font-size:13px; color:var(--text-secondary); line-height:1.5;">${escapeHtml(t.description)}</span>`
-                        : `<span style="font-size:13px; color:var(--text-muted);">—</span>`}
+                        ? `<span style="font-size:var(--font-base); color:var(--text-secondary); line-height:1.5;">${escapeHtml(t.description)}</span>`
+                        : `<span style="font-size:var(--font-base); color:var(--text-muted);">—</span>`}
                 </div>
                 <div style="padding:0 10px;">
                     <select class="status-pill ${t.status}" onchange="this.className='status-pill '+this.value; quickUpdateTask(${t.id},'status',this.value)">
@@ -3522,7 +3522,7 @@
                     ${assigneeInitials
                         ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);">${assigneeInitials}</div>
                            <span class="assignee-name-sm">${escapeHtml(t.assignee_name)}</span>`
-                        : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
+                        : `<span style="font-size:var(--font-base);color:var(--text-muted);">—</span>`}
                 </div>
                 <div style="padding:0 10px; position:relative;">
                     <button type="button" class="inline-date-btn ${dueClass}" onclick="event.stopPropagation(); this.nextElementSibling.showPicker();">
@@ -3550,13 +3550,13 @@
                     </select>
                 </div>
                 <div style="padding:0 10px;">
-                    <span style="font-size:12px; color:var(--text-secondary);">${t.created_at ? formatDate(t.created_at) : '—'}</span>
+                    <span style="font-size:var(--font-sm); color:var(--text-secondary);">${t.created_at ? formatDate(t.created_at) : '—'}</span>
                 </div>
                 <div style="padding:0 10px;" class="assignee-cell">
                     ${t.creator_name
                         ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);">${getInitials(t.creator_name)}</div>
                            <span class="assignee-name-sm">${escapeHtml(t.creator_name)}</span>`
-                        : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
+                        : `<span style="font-size:var(--font-base);color:var(--text-muted);">—</span>`}
                 </div>
                 <div style="padding:0 6px; display:flex; gap:4px;">
                     <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -3781,7 +3781,7 @@
                     <div class="detail-key">Reporter</div>
                     <div class="detail-val" style="display:flex;align-items:center;gap:8px;">
                         ${t.creator_name
-                            ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);flex-shrink:0;">${getInitials(t.creator_name)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.creator_name)}</span>`
+                            ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:var(--font-xs);background:linear-gradient(135deg,#6366f1,#8b5cf6);flex-shrink:0;">${getInitials(t.creator_name)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.creator_name)}</span>`
                             : `<span style="color:var(--text-muted);">—</span>`}
                     </div>
                 </div>
@@ -3802,7 +3802,7 @@
                 </div>
                 <div class="detail-row">
                     <div class="detail-key">Created</div>
-                    <div class="detail-val" style="color:var(--text-muted);font-size:12px;">${t.created_at?formatDate(t.created_at):'—'}</div>
+                    <div class="detail-val" style="color:var(--text-muted);font-size:var(--font-sm);">${t.created_at?formatDate(t.created_at):'—'}</div>
                 </div>
             `;
 
@@ -3823,7 +3823,7 @@
                 const comments = await api(`/tasks/${taskId}/comments`);
                 const list = document.getElementById('commentsList');
                 if (!comments.length) {
-                    list.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:4px 0 12px;">No comments yet.</p>';
+                    list.innerHTML = '<p style="color:var(--text-muted);font-size:var(--font-base);padding:4px 0 12px;">No comments yet.</p>';
                     return;
                 }
                 list.innerHTML = comments.map(c => `
@@ -3956,7 +3956,7 @@
                     if (!matches.length) { hideMentionDropdown(); return; }
                     dd.innerHTML = matches.map(u => `
                         <div class="mention-item" onclick="insertMention('${escapeHtml(u.name)}')">
-                            <div class="comment-avatar" style="width:24px;height:24px;font-size:10px;">${getInitials(u.name)}</div>
+                            <div class="comment-avatar" style="width:24px;height:24px;font-size:var(--font-xs);">${getInitials(u.name)}</div>
                             <span>${escapeHtml(u.name)}</span>
                         </div>`).join('');
                     dd.style.display = 'block';
@@ -4208,7 +4208,7 @@
             try {
                 const users = await api('/admin/users');
                 if (!users.length) {
-                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No users found.</p>';
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: var(--font-base);">No users found.</p>';
                     return;
                 }
                 container.innerHTML = `
@@ -4228,7 +4228,7 @@
                                 <tr>
                                     <td><strong>${escapeHtml(u.name)}</strong></td>
                                     <td style="color: var(--text-secondary);">${escapeHtml(u.email)}</td>
-                                    <td>${u.is_admin ? '<span style="color: var(--danger); font-weight: 600; font-size: 12px;">ADMIN</span>' : '<span style="color: var(--text-muted); font-size: 12px;">Member</span>'}</td>
+                                    <td>${u.is_admin ? '<span style="color: var(--danger); font-weight: 600; font-size: var(--font-sm);">ADMIN</span>' : '<span style="color: var(--text-muted); font-size: var(--font-sm);">Member</span>'}</td>
                                     <td style="color: var(--text-secondary);">${u.project_count}</td>
                                     <td style="color: var(--text-secondary);">${u.task_count}</td>
                                     <td>
@@ -4237,7 +4237,7 @@
                                                 ${u.is_admin ? 'Revoke Admin' : 'Make Admin'}
                                             </button>
                                             <button class="admin-action-btn danger" onclick="adminDeleteUser(${u.id}, '${escapeHtml(u.name)}')">Delete</button>
-                                        ` : '<span style="color: var(--text-muted); font-size: 12px;">You</span>'}
+                                        ` : '<span style="color: var(--text-muted); font-size: var(--font-sm);">You</span>'}
                                     </td>
                                 </tr>
                             `).join('')}
@@ -4245,7 +4245,7 @@
                     </table>
                 `;
             } catch (err) {
-                container.innerHTML = '<p style="color: var(--danger); font-size: 13px;">Failed to load users.</p>';
+                container.innerHTML = '<p style="color: var(--danger); font-size: var(--font-base);">Failed to load users.</p>';
             }
         }
 
@@ -4254,7 +4254,7 @@
             try {
                 const allProjects = await api('/admin/projects');
                 if (!allProjects.length) {
-                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No projects found.</p>';
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: var(--font-base);">No projects found.</p>';
                     return;
                 }
                 container.innerHTML = `
@@ -4291,7 +4291,7 @@
                     </table>
                 `;
             } catch (err) {
-                container.innerHTML = '<p style="color: var(--danger); font-size: 13px;">Failed to load projects.</p>';
+                container.innerHTML = '<p style="color: var(--danger); font-size: var(--font-base);">Failed to load projects.</p>';
             }
         }
 
