@@ -157,6 +157,17 @@ async function initDatabase() {
             )
         `);
 
+        await client.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='is_admin') THEN
+                    ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+                END IF;
+            END $$;
+        `);
+
+        await client.query(`UPDATE users SET is_admin = TRUE WHERE email = 'audrey.john@pray.com'`);
+
         console.log('Database initialized');
     } finally {
         client.release();
@@ -178,6 +189,11 @@ const authenticate = (req, res, next) => {
     } catch (err) {
         return res.status(401).json({ error: 'Invalid token' });
     }
+};
+
+const isAdmin = (req, res, next) => {
+    if (!req.user.is_admin) return res.status(403).json({ error: 'Admin access required' });
+    next();
 };
 
 // ============== AUTH ROUTES ==============
@@ -266,10 +282,10 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         // Generate token
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id, email: user.email, is_admin: user.is_admin }, JWT_SECRET, { expiresIn: '7d' });
 
         res.json({
-            user: { id: user.id, name: user.name, email: user.email, created_at: user.created_at },
+            user: { id: user.id, name: user.name, email: user.email, is_admin: user.is_admin, created_at: user.created_at },
             token
         });
     } catch (err) {
@@ -281,7 +297,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Get current user
 app.get('/api/auth/me', authenticate, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, email, created_at FROM users WHERE id = $1', [req.user.id]);
+        const result = await pool.query('SELECT id, name, email, is_admin, created_at FROM users WHERE id = $1', [req.user.id]);
         const user = result.rows[0];
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -430,10 +446,12 @@ app.delete('/api/projects/:id', authenticate, async (req, res) => {
     try {
         const projectId = req.params.id;
 
-        const projectCheck = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner_id = $2',
-            [projectId, req.user.id]);
-        if (projectCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'Only project owners can delete projects' });
+        if (!req.user.is_admin) {
+            const projectCheck = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner_id = $2',
+                [projectId, req.user.id]);
+            if (projectCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'Only project owners can delete projects' });
+            }
         }
 
         await pool.query('DELETE FROM tasks WHERE project_id = $1', [projectId]);
@@ -693,6 +711,75 @@ app.get('/api/admin/stats', async (req, res) => {
             totalUsers: result.rows.length,
             users: result.rows
         });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ============== ADMIN ROUTES ==============
+
+app.get('/api/admin/users', authenticate, isAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT u.id, u.name, u.email, u.is_admin, u.created_at,
+                   COUNT(DISTINCT pm.project_id) as project_count,
+                   COUNT(DISTINCT t.id) as task_count
+            FROM users u
+            LEFT JOIN project_members pm ON u.id = pm.user_id
+            LEFT JOIN tasks t ON u.id = t.creator_id
+            GROUP BY u.id
+            ORDER BY u.created_at ASC
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.put('/api/admin/users/:id/toggle-admin', authenticate, isAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        if (userId === req.user.id) {
+            return res.status(400).json({ error: 'Cannot change your own admin status' });
+        }
+        const result = await pool.query(
+            'UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING id, name, email, is_admin',
+            [userId]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.delete('/api/admin/users/:id', authenticate, isAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        if (userId === req.user.id) {
+            return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+        res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.get('/api/admin/projects', authenticate, isAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id, p.name, p.color, p.ministry, p.created_at,
+                   u.name as owner_name, u.email as owner_email,
+                   COUNT(DISTINCT pm.user_id) as member_count,
+                   COUNT(DISTINCT t.id) as task_count
+            FROM projects p
+            JOIN users u ON p.owner_id = u.id
+            LEFT JOIN project_members pm ON p.id = pm.project_id
+            LEFT JOIN tasks t ON p.id = t.project_id
+            GROUP BY p.id, u.name, u.email
+            ORDER BY p.created_at ASC
+        `);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }

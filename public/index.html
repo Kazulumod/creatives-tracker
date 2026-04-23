@@ -1728,6 +1728,92 @@
                 padding: 20px;
             }
         }
+
+        /* Admin Panel */
+        .admin-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 2px 7px;
+            border-radius: var(--radius-full);
+            background: var(--danger);
+            color: white;
+            margin-left: auto;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .admin-tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: -1px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .admin-tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .admin-table td {
+            padding: 12px 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .admin-table tr:last-child td { border-bottom: none; }
+
+        .admin-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .admin-action-btn {
+            padding: 5px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+            margin-right: 4px;
+        }
+
+        .admin-action-btn:hover { background: var(--bg-input); color: var(--text-primary); }
+        .admin-action-btn.danger { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+        .admin-action-btn.danger:hover { background: rgba(239,68,68,0.1); }
+        .admin-action-btn.promote { color: var(--success); border-color: rgba(34,197,94,0.3); }
+        .admin-action-btn.promote:hover { background: rgba(34,197,94,0.1); }
     </style>
 </head>
 <body>
@@ -2071,6 +2157,16 @@
                         Add Project
                     </button>
                 </div>
+                <div class="sidebar-section" id="adminSection" style="display: none;">
+                    <div class="sidebar-title">Admin</div>
+                    <div class="sidebar-item" onclick="openAdminPanel()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        Admin Panel
+                        <span class="admin-badge">ADMIN</span>
+                    </div>
+                </div>
             </aside>
 
             <main class="main-content">
@@ -2383,6 +2479,39 @@
     </div>
 
     <!-- Settings Modal -->
+    <!-- Admin Panel Modal -->
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal" style="max-width: 780px;">
+            <button class="modal-close" onclick="closeAdminPanel()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="modal-header">
+                <h2 class="modal-title">Admin Panel</h2>
+                <p class="modal-subtitle">Manage users and projects</p>
+            </div>
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" id="adminTabUsers" onclick="switchAdminTab('users')">Users</button>
+                <button class="admin-tab-btn" id="adminTabProjects" onclick="switchAdminTab('projects')">All Projects</button>
+            </div>
+            <div style="padding: 0 24px 24px;">
+                <!-- Users Tab -->
+                <div id="adminUsersTab">
+                    <div id="adminUsersContent" style="overflow-x: auto;">
+                        <p style="color: var(--text-muted); font-size: 13px;">Loading users...</p>
+                    </div>
+                </div>
+                <!-- Projects Tab -->
+                <div id="adminProjectsTab" style="display: none;">
+                    <div id="adminProjectsContent" style="overflow-x: auto;">
+                        <p style="color: var(--text-muted); font-size: 13px;">Loading projects...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="settingsModal">
         <div class="modal" style="max-width: 400px;">
             <button class="modal-close" onclick="closeSettingsModal()">
@@ -2581,6 +2710,10 @@
             document.getElementById('userAvatar').textContent = getInitials(user.name);
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userEmail').textContent = user.email;
+
+            if (user.is_admin) {
+                document.getElementById('adminSection').style.display = 'block';
+            }
 
             document.getElementById('landingPage').style.display = 'none';
             document.getElementById('appContainer').classList.add('active');
@@ -3090,6 +3223,153 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Admin Panel
+        async function openAdminPanel() {
+            document.getElementById('adminModal').classList.add('show');
+            switchAdminTab('users');
+        }
+
+        function closeAdminPanel() {
+            document.getElementById('adminModal').classList.remove('show');
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('adminUsersTab').style.display = tab === 'users' ? 'block' : 'none';
+            document.getElementById('adminProjectsTab').style.display = tab === 'projects' ? 'block' : 'none';
+            document.getElementById('adminTabUsers').classList.toggle('active', tab === 'users');
+            document.getElementById('adminTabProjects').classList.toggle('active', tab === 'projects');
+            if (tab === 'users') loadAdminUsers();
+            else loadAdminProjects();
+        }
+
+        async function loadAdminUsers() {
+            const container = document.getElementById('adminUsersContent');
+            try {
+                const users = await api('/admin/users');
+                if (!users.length) {
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No users found.</p>';
+                    return;
+                }
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Projects</th>
+                                <th>Tasks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(u => `
+                                <tr>
+                                    <td><strong>${escapeHtml(u.name)}</strong></td>
+                                    <td style="color: var(--text-secondary);">${escapeHtml(u.email)}</td>
+                                    <td>${u.is_admin ? '<span style="color: var(--danger); font-weight: 600; font-size: 12px;">ADMIN</span>' : '<span style="color: var(--text-muted); font-size: 12px;">Member</span>'}</td>
+                                    <td style="color: var(--text-secondary);">${u.project_count}</td>
+                                    <td style="color: var(--text-secondary);">${u.task_count}</td>
+                                    <td>
+                                        ${u.id !== currentUser.id ? `
+                                            <button class="admin-action-btn ${u.is_admin ? '' : 'promote'}" onclick="adminToggleAdmin(${u.id}, '${escapeHtml(u.name)}', ${u.is_admin})">
+                                                ${u.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                                            </button>
+                                            <button class="admin-action-btn danger" onclick="adminDeleteUser(${u.id}, '${escapeHtml(u.name)}')">Delete</button>
+                                        ` : '<span style="color: var(--text-muted); font-size: 12px;">You</span>'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                container.innerHTML = '<p style="color: var(--danger); font-size: 13px;">Failed to load users.</p>';
+            }
+        }
+
+        async function loadAdminProjects() {
+            const container = document.getElementById('adminProjectsContent');
+            try {
+                const allProjects = await api('/admin/projects');
+                if (!allProjects.length) {
+                    container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No projects found.</p>';
+                    return;
+                }
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Ministry</th>
+                                <th>Owner</th>
+                                <th>Members</th>
+                                <th>Tasks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allProjects.map(p => `
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${p.color}; flex-shrink: 0;"></div>
+                                            <strong>${escapeHtml(p.name)}</strong>
+                                        </div>
+                                    </td>
+                                    <td style="color: var(--text-secondary);">${escapeHtml(p.ministry || 'General')}</td>
+                                    <td style="color: var(--text-secondary);">${escapeHtml(p.owner_name)}</td>
+                                    <td style="color: var(--text-secondary);">${p.member_count}</td>
+                                    <td style="color: var(--text-secondary);">${p.task_count}</td>
+                                    <td>
+                                        <button class="admin-action-btn danger" onclick="adminDeleteProject(${p.id}, '${escapeHtml(p.name)}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                container.innerHTML = '<p style="color: var(--danger); font-size: 13px;">Failed to load projects.</p>';
+            }
+        }
+
+        async function adminToggleAdmin(userId, userName, isCurrentlyAdmin) {
+            const action = isCurrentlyAdmin ? 'revoke admin from' : 'make admin';
+            if (!confirm(`Are you sure you want to ${action} ${userName}?`)) return;
+            try {
+                await api(`/admin/users/${userId}/toggle-admin`, { method: 'PUT' });
+                showToast(`Updated ${userName}'s role`, 'success');
+                loadAdminUsers();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function adminDeleteUser(userId, userName) {
+            if (!confirm(`Permanently delete user "${userName}"? This cannot be undone.`)) return;
+            try {
+                await api(`/admin/users/${userId}`, { method: 'DELETE' });
+                showToast(`Deleted user ${userName}`, 'success');
+                loadAdminUsers();
+                loadTeamMembers();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function adminDeleteProject(projectId, projectName) {
+            if (!confirm(`Permanently delete project "${projectName}" and all its tasks? This cannot be undone.`)) return;
+            try {
+                await api(`/projects/${projectId}`, { method: 'DELETE' });
+                showToast(`Deleted project ${projectName}`, 'success');
+                loadAdminProjects();
+                loadProjects();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
         }
 
         // Settings Modal
