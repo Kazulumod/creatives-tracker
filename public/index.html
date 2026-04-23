@@ -1597,6 +1597,24 @@
             margin-bottom: 24px;
         }
 
+        .task-edit-input {
+            width: 100%; font-size: 22px; font-weight: 700; line-height: 1.4;
+            background: var(--bg-input); border: 1px solid var(--accent);
+            border-radius: var(--radius-sm); color: var(--text-primary);
+            padding: 8px 12px; font-family: inherit; margin-bottom: 24px;
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+        .task-edit-input:focus { outline: none; }
+
+        .task-edit-textarea {
+            width: 100%; min-height: 120px; font-size: 14px; line-height: 1.75;
+            background: var(--bg-input); border: 1px solid var(--accent);
+            border-radius: var(--radius-sm); color: var(--text-secondary);
+            padding: 10px 12px; font-family: inherit; resize: vertical;
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+        .task-edit-textarea:focus { outline: none; }
+
         .task-detail-section { margin-bottom: 28px; }
 
         .td-label {
@@ -2790,7 +2808,12 @@
             <div class="task-detail-header">
                 <span class="task-detail-key" id="viewTaskKey"></span>
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="editFromView()">Edit</button>
+                    <!-- View mode -->
+                    <button id="tdEditBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="enterTaskEditMode()">Edit</button>
+                    <!-- Edit mode (hidden by default) -->
+                    <button id="tdSaveBtn" class="btn btn-primary" style="padding:6px 14px;font-size:12px;display:none;" onclick="saveTaskEdits()">Save changes</button>
+                    <button id="tdDeleteBtn" class="btn" style="padding:6px 14px;font-size:12px;color:var(--danger);border-color:rgba(239,68,68,0.4);display:none;" onclick="deleteFromView()">Delete</button>
+                    <button id="tdCancelBtn" class="btn btn-secondary" style="padding:6px 14px;font-size:12px;display:none;" onclick="cancelTaskEdits()">Cancel</button>
                     <button class="icon-btn" onclick="closeViewModal()" title="Close">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -2799,10 +2822,16 @@
             <div class="task-detail-body">
                 <!-- Left: main content -->
                 <div class="task-detail-main">
+                    <!-- View mode title -->
                     <h2 class="task-detail-title" id="viewTaskSummary"></h2>
+                    <!-- Edit mode title (hidden) -->
+                    <input id="editTaskSummary" type="text" class="task-edit-input" style="display:none;" placeholder="Task title">
                     <div class="task-detail-section">
                         <div class="td-label">Description</div>
+                        <!-- View mode -->
                         <p id="viewTaskDescription" style="color:var(--text-secondary);line-height:1.75;font-size:14px;white-space:pre-wrap;"></p>
+                        <!-- Edit mode (hidden) -->
+                        <textarea id="editTaskDescription" class="task-edit-textarea" style="display:none;" placeholder="Add a description…"></textarea>
                     </div>
                     <!-- Activity / Comments -->
                     <div class="task-detail-section">
@@ -3940,19 +3969,71 @@
         }
 
         function closeViewModal() {
+            cancelTaskEdits();
             document.getElementById('viewModal').classList.remove('show');
             currentViewTaskId = null;
         }
 
-        function editFromView() {
-            const taskIdToEdit = currentViewTaskId;
-            closeViewModal();
-            editTask(taskIdToEdit);
+        function enterTaskEditMode() {
+            const t = tasks.find(x => parseInt(x.id) === currentViewTaskId);
+            if (!t) return;
+            // Populate edit fields
+            document.getElementById('editTaskSummary').value = t.summary;
+            document.getElementById('editTaskDescription').value = t.description || '';
+            // Toggle visibility
+            document.getElementById('viewTaskSummary').style.display = 'none';
+            document.getElementById('editTaskSummary').style.display = 'block';
+            document.getElementById('viewTaskDescription').style.display = 'none';
+            document.getElementById('editTaskDescription').style.display = 'block';
+            // Toggle buttons
+            document.getElementById('tdEditBtn').style.display = 'none';
+            document.getElementById('tdSaveBtn').style.display = '';
+            document.getElementById('tdDeleteBtn').style.display = '';
+            document.getElementById('tdCancelBtn').style.display = '';
+            document.getElementById('editTaskSummary').focus();
         }
 
-        function editTask(id) {
-            openTaskModal(id);
+        function cancelTaskEdits() {
+            document.getElementById('viewTaskSummary').style.display = '';
+            document.getElementById('editTaskSummary').style.display = 'none';
+            document.getElementById('viewTaskDescription').style.display = '';
+            document.getElementById('editTaskDescription').style.display = 'none';
+            document.getElementById('tdEditBtn').style.display = '';
+            document.getElementById('tdSaveBtn').style.display = 'none';
+            document.getElementById('tdDeleteBtn').style.display = 'none';
+            document.getElementById('tdCancelBtn').style.display = 'none';
         }
+
+        async function saveTaskEdits() {
+            const summary = document.getElementById('editTaskSummary').value.trim();
+            const description = document.getElementById('editTaskDescription').value.trim();
+            if (!summary) { showToast('Title cannot be empty', 'error'); return; }
+            try {
+                await api(`/tasks/${currentViewTaskId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ summary, description })
+                });
+                await Promise.all([loadTasks(), loadStats()]);
+                // Refresh displayed text
+                document.getElementById('viewTaskSummary').textContent = summary;
+                document.getElementById('viewTaskDescription').textContent = description || 'No description provided.';
+                cancelTaskEdits();
+                showToast('Task updated', 'success');
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        async function deleteFromView() {
+            if (!confirm('Delete this task? This cannot be undone.')) return;
+            try {
+                await api(`/tasks/${currentViewTaskId}`, { method: 'DELETE' });
+                await Promise.all([loadTasks(), loadStats()]);
+                closeViewModal();
+                showToast('Task deleted', 'success');
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        function editFromView() { enterTaskEditMode(); }
+        function editTask(id) { openTaskModal(id); }
 
         async function deleteTask(id) {
             if (!confirm('Delete this task?')) return;
