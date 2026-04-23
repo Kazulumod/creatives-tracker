@@ -588,7 +588,7 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 app.put('/api/tasks/:id', authenticate, async (req, res) => {
     try {
         const taskId = req.params.id;
-        const { summary, description, status, priority, ministry, assignee_id, due_date } = req.body;
+        const { summary, description, status, priority, ministry, assignee_id, due_date, project_id } = req.body;
 
         const taskCheck = await pool.query(`
             SELECT t.* FROM tasks t
@@ -602,6 +602,18 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
 
         const task = taskCheck.rows[0];
 
+        let newProjectId = task.project_id;
+        if (project_id && parseInt(project_id) !== task.project_id) {
+            const newProjCheck = await pool.query(
+                'SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2',
+                [project_id, req.user.id]
+            );
+            if (newProjCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'You are not a member of the target project' });
+            }
+            newProjectId = parseInt(project_id);
+        }
+
         await pool.query(`
             UPDATE tasks SET
                 summary = COALESCE($1, summary),
@@ -611,8 +623,9 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                 ministry = COALESCE($5, ministry),
                 assignee_id = $6,
                 due_date = $7,
+                project_id = $8,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $8
+            WHERE id = $9
         `, [
             summary,
             description,
@@ -621,6 +634,7 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
             ministry,
             assignee_id !== undefined ? assignee_id : task.assignee_id,
             due_date !== undefined ? due_date : task.due_date,
+            newProjectId,
             taskId
         ]);
 
