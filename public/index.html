@@ -1286,9 +1286,13 @@
 
         .inline-select.priority-select.high { color: var(--danger); }
         .inline-select.priority-select.medium { color: var(--warning); }
+        .inline-select.priority-select.low { color: var(--info); }
+        .inline-select.priority-select option { color: var(--text-primary); }
+        .inline-select.priority-select option[value="high"] { color: var(--danger); }
+        .inline-select.priority-select option[value="medium"] { color: var(--warning); }
+        .inline-select.priority-select option[value="low"] { color: var(--info); }
 
         .inline-select.project-select { color: var(--text-primary); }
-        .inline-select.priority-select.low { color: var(--info); }
 
         .task-checkbox {
             width: 20px;
@@ -2856,7 +2860,7 @@
                         <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
                         <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
                     </select>
-                    <select class="inline-select priority-select ${t.priority}" onchange="quickUpdateTask(${t.id}, 'priority', this.value)">
+                    <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id}, 'priority', this.value)">
                         <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
                         <option value="medium" ${t.priority === 'medium' ? 'selected' : ''}>Medium</option>
                         <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
