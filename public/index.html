@@ -3616,10 +3616,10 @@
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.user-menu')) closeUserMenu();
-            // Close assignee portal when clicking outside the portal or any assignee picker
             if (!e.target.closest('#assigneePortal') && !e.target.closest('.assignee-picker')) {
                 document.getElementById('assigneePortal')?.classList.remove('show');
                 _portalCallback = null;
+                _portalAnchor   = null;
             }
         });
 
@@ -4605,68 +4605,72 @@
             }
         }
 
-        // ── Assignee portal (single global dropdown, outside any modal/transform) ──
+        // ── Assignee portal (single global dropdown, lives on <body>) ──
         let _portalCallback = null;
+        let _portalAnchor   = null;
+
+        // Wire up ONE click listener on the portal using event delegation
+        document.getElementById('assigneePortal').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const item = e.target.closest('.assignee-picker-item');
+            if (!item) return;
+            const userId   = item.dataset.uid   || null;
+            const userName = item.dataset.uname || '';
+            this.classList.remove('show');
+            const cb = _portalCallback;
+            _portalCallback = null;
+            _portalAnchor   = null;
+            if (cb) cb(userId ? parseInt(userId) : null, userName);
+        });
 
         function _openAssigneePortal(anchorEl, currentAssigneeId, projectColor, callback) {
             const portal = document.getElementById('assigneePortal');
-            const isOpen = portal.classList.contains('show') && _portalCallback !== null;
             // Toggle closed if same anchor clicked again
-            if (isOpen && portal._anchor === anchorEl) {
+            if (portal.classList.contains('show') && _portalAnchor === anchorEl) {
                 portal.classList.remove('show');
                 _portalCallback = null;
+                _portalAnchor   = null;
                 return;
             }
             _portalCallback = callback;
-            portal._anchor = anchorEl;
+            _portalAnchor   = anchorEl;
             const color = projectColor || 'var(--accent)';
             portal.innerHTML =
-                `<div class="assignee-picker-item" onclick="_portalSelect(null,'')">— Unassigned</div>` +
+                `<div class="assignee-picker-item" data-uid="" data-uname="">— Unassigned</div>` +
                 teamMembers.map(u =>
                     `<div class="assignee-picker-item ${String(u.id)===String(currentAssigneeId)?'selected':''}"
-                          onclick="_portalSelect(${u.id},${JSON.stringify(u.name)})">
+                          data-uid="${u.id}" data-uname="${escapeHtml(u.name)}">
                         <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color} 0%,#f97316 100%);">${getInitials(u.name)}</div>
                         <span>${escapeHtml(u.name)}</span>
                     </div>`
                 ).join('');
             const rect = anchorEl.getBoundingClientRect();
-            portal.style.top  = (rect.bottom + 4) + 'px';
-            portal.style.left = rect.left + 'px';
+            portal.style.top      = (rect.bottom + 4) + 'px';
+            portal.style.left     = rect.left + 'px';
             portal.style.minWidth = Math.max(190, rect.width) + 'px';
             portal.classList.add('show');
         }
 
-        function _portalSelect(userId, userName) {
-            document.getElementById('assigneePortal').classList.remove('show');
-            if (_portalCallback) { _portalCallback(userId, userName); _portalCallback = null; }
-        }
-
         function toggleAssigneePicker(el) {
-            const taskId     = el.dataset.taskId;
-            const assigneeId = el.dataset.assigneeId;
-            const color      = el.dataset.projectColor;
-            _openAssigneePortal(el, assigneeId, color, async (userId) => {
-                // Update display
-                const avatar = userId
-                    ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(teamMembers.find(u=>String(u.id)===String(userId))?.name||'')}</div><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(teamMembers.find(u=>String(u.id)===String(userId))?.name||'')}</span>`
-                    : `<span style="color:var(--text-muted);">Unassigned</span>`;
-                // Keep the list div, replace visual content before it
-                const list = el.querySelector('.assignee-picker-list');
-                el.innerHTML = avatar + (list ? list.outerHTML : '<div class="assignee-picker-list"></div>');
+            const taskId = el.dataset.taskId;
+            const color  = el.dataset.projectColor;
+            _openAssigneePortal(el, el.dataset.assigneeId, color, async (userId, userName) => {
                 el.dataset.assigneeId = userId || '';
+                const listDiv = '<div class="assignee-picker-list"></div>';
+                el.innerHTML = userId
+                    ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(userName)}</div><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(userName)}</span>${listDiv}`
+                    : `<span style="color:var(--text-muted);">Unassigned</span>${listDiv}`;
                 await quickUpdateTask(taskId, 'assignee_id', userId);
             });
         }
 
-        async function pickAssignee(taskId, userId, pickerEl) {
+        async function pickAssignee(taskId, userId) {
             await quickUpdateTask(taskId, 'assignee_id', userId);
         }
 
         function toggleModalAssigneePicker(el) {
-            const currentId = document.getElementById('taskAssigneeId').value;
-            _openAssigneePortal(el, currentId, null, (userId, userName) => {
-                selectModalAssignee(userId, userName);
-            });
+            _openAssigneePortal(el, document.getElementById('taskAssigneeId').value, null,
+                (userId, userName) => selectModalAssignee(userId, userName));
         }
 
         function selectModalAssignee(userId, userName) {
