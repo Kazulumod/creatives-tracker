@@ -3243,8 +3243,10 @@
                 <div style="display:flex;align-items:center;padding:0 10px;">
                     <input type="checkbox" class="task-checkbox" ${t.status === 'done' ? 'checked' : ''} onclick="event.stopPropagation(); toggleDone(${t.id}, '${t.status}')">
                 </div>
-                <div style="padding:0 10px;overflow:hidden;">
-                    <span style="font-size:12px;font-weight:600;color:${t.project_color||'var(--text-secondary)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;" title="${escapeHtml(t.project_name||'')}">${escapeHtml(t.project_name||'—')}</span>
+                <div style="padding:0 10px;">
+                    <select class="inline-select" style="font-weight:600;color:${t.project_color||'var(--text-secondary)'};" onchange="quickUpdateTask(${t.id},'project_id',this.value)">
+                        ${projects.map(p => `<option value="${p.id}" ${parseInt(p.id)===parseInt(t.project_id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+                    </select>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
                     <span style="color:${t.project_color || 'var(--accent)'}; font-size:12px; font-weight:700; white-space:nowrap;">${t.key}</span>
