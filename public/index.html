@@ -1322,17 +1322,35 @@
             text-overflow: ellipsis;
         }
 
-        /* Due date cell */
-        .due-cell {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
+        /* Due date input */
+        .inline-date {
+            width: 100%;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background-color: rgba(255,255,255,0.06);
             color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.15s, border-color 0.15s;
+            color-scheme: dark;
         }
 
-        .due-cell.overdue { color: var(--danger); }
-        .due-cell.soon    { color: var(--warning); }
+        .inline-date:hover {
+            background-color: rgba(255,255,255,0.11);
+            border-color: rgba(255,255,255,0.28);
+        }
+
+        .inline-date:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .inline-date.overdue { color: var(--danger); border-color: rgba(239,68,68,0.3); background-color: rgba(239,68,68,0.08); }
+        .inline-date.soon    { color: var(--warning); border-color: rgba(234,179,8,0.3); background-color: rgba(234,179,8,0.08); }
 
         .inline-select {
             appearance: none;
@@ -3273,8 +3291,8 @@
                            <span class="assignee-name-sm">${escapeHtml(t.assignee_name)}</span>`
                         : `<span style="font-size:13px;color:var(--text-muted);">—</span>`}
                 </div>
-                <div style="padding:0 10px;" class="due-cell ${dueClass}">
-                    ${t.due_date ? `${dueIcon}<span>${formatDate(t.due_date)}</span>` : '<span style="color:var(--text-muted);">—</span>'}
+                <div style="padding:0 10px;">
+                    <input type="date" class="inline-date ${dueClass}" value="${t.due_date ? t.due_date.split('T')[0] : ''}" onchange="quickUpdateTask(${t.id},'due_date',this.value)" onclick="event.stopPropagation()">
                 </div>
                 <div style="padding:0 10px;">
                     <select class="inline-select priority-select ${t.priority}" onchange="this.className='inline-select priority-select '+this.value; quickUpdateTask(${t.id},'priority',this.value)">
