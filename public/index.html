@@ -2968,6 +2968,7 @@
             document.getElementById('appContainer').classList.add('active');
 
             await Promise.all([loadProjects(), loadTasks(), loadStats(), loadTeamMembers()]);
+            renderTasks(); // re-render now that both projects and tasks are fully loaded
             const savedView = localStorage.getItem('ct_view') || 'board';
             setView(savedView);
         }
@@ -3245,7 +3246,7 @@
                 </div>
                 <div style="padding:0 10px;">
                     <select class="inline-select" style="font-weight:600;color:${t.project_color||'var(--text-secondary)'};" onchange="quickUpdateTask(${t.id},'project_id',this.value)">
-                        ${projects.map(p => `<option value="${p.id}" ${parseInt(p.id)===parseInt(t.project_id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+                        ${projectOptions}
                     </select>
                 </div>
                 <div style="padding:0 10px; overflow:hidden; cursor:pointer;" onclick="viewTask(${t.id})">
