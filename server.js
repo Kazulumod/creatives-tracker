@@ -20,11 +20,11 @@ let transporter = null;
 if (EMAIL_USER && EMAIL_PASS) {
     transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: EMAIL_USER,
-            pass: EMAIL_PASS
-        }
+        auth: { user: EMAIL_USER, pass: EMAIL_PASS }
     });
+    console.log(`Email configured: ${EMAIL_USER}`);
+} else {
+    console.warn('Email not configured — set EMAIL_USER and EMAIL_PASS in environment variables to enable notifications');
 }
 
 // ── Shared email layout ─────────────────────────────────────
@@ -982,21 +982,15 @@ app.post('/api/tasks/:id/comments', authenticate, async (req, res) => {
         comment.user_name = commenterResult.rows[0]?.name;
         const commenterName = comment.user_name || 'Someone';
 
-        // Send @mention emails
-        if (content) {
-            const mentionMatches = [...new Set((content.match(/@([\w][^\n@]*)/g) || []).map(m => m.slice(1).trim()))];
-            if (mentionMatches.length) {
-                const taskResult = await pool.query('SELECT key, summary FROM tasks WHERE id = $1', [req.params.id]);
-                const task = taskResult.rows[0];
-                for (const mentionedName of mentionMatches) {
-                    const userResult = await pool.query(
-                        'SELECT id, name, email FROM users WHERE name ILIKE $1 AND id != $2 LIMIT 1',
-                        [mentionedName, req.user.id]
-                    );
-                    if (userResult.rows[0]) {
-                        const u = userResult.rows[0];
-                        sendMentionEmail(u.email, u.name, commenterName, task.summary, task.key, content);
-                    }
+        // Send @mention emails — check each user's name literally in the content
+        if (content && content.includes('@')) {
+            const taskResult = await pool.query('SELECT key, summary FROM tasks WHERE id = $1', [req.params.id]);
+            const task = taskResult.rows[0];
+            const allUsers = await pool.query('SELECT id, name, email FROM users WHERE id != $1', [req.user.id]);
+            for (const u of allUsers.rows) {
+                if (content.includes('@' + u.name)) {
+                    console.log(`Mention detected: @${u.name} → ${u.email}`);
+                    sendMentionEmail(u.email, u.name, commenterName, task.summary, task.key, content);
                 }
             }
         }
