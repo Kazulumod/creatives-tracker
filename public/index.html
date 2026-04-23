@@ -1541,6 +1541,152 @@
             color: white;
         }
 
+        /* ===== Task Detail Modal ===== */
+        .task-detail-modal {
+            width: 94vw;
+            max-width: 1160px;
+            height: 88vh;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .task-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .task-detail-key {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .task-detail-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .task-detail-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .task-detail-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            padding: 22px 20px;
+        }
+
+        .task-detail-title {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 24px;
+        }
+
+        .task-detail-section { margin-bottom: 28px; }
+
+        .td-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        /* Detail sidebar rows */
+        .detail-row {
+            display: flex;
+            align-items: center;
+            min-height: 38px;
+            border-bottom: 1px solid var(--border-light);
+            gap: 10px;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-key { font-size: 12px; color: var(--text-muted); width: 84px; flex-shrink: 0; }
+        .detail-val { font-size: 13px; color: var(--text-primary); flex: 1; }
+
+        /* Comments */
+        .comment-compose { display: flex; gap: 12px; }
+
+        .comment-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+        }
+
+        .comment-input-wrapper {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-input);
+            overflow: hidden;
+            transition: border-color 0.15s;
+        }
+        .comment-input-wrapper:focus-within { border-color: var(--accent); }
+
+        .comment-textarea {
+            width: 100%; min-height: 72px;
+            background: transparent; border: none;
+            padding: 12px 14px; color: var(--text-primary);
+            font-family: inherit; font-size: 14px; resize: vertical; outline: none;
+            line-height: 1.6;
+        }
+
+        .comment-toolbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 10px; border-top: 1px solid var(--border-color);
+        }
+
+        .comment-image-preview { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 10px 0; }
+        .comment-image-preview img { height: 56px; width: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: zoom-in; }
+
+        .comment-item { display: flex; gap: 12px; margin-bottom: 20px; }
+        .comment-body { flex: 1; }
+        .comment-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .comment-author { font-size: 13px; font-weight: 600; }
+        .comment-time { font-size: 11px; color: var(--text-muted); }
+        .comment-text { font-size: 14px; color: var(--text-secondary); line-height: 1.65; white-space: pre-wrap; }
+        .comment-img { max-width: 100%; max-height: 280px; border-radius: 8px; margin-top: 8px; border: 1px solid var(--border-color); cursor: zoom-in; }
+        .mention { color: var(--info); font-weight: 600; }
+
+        /* @mention dropdown */
+        .mention-dropdown {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            z-index: 100;
+            min-width: 200px;
+            max-height: 180px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-card);
+        }
+        .mention-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; cursor: pointer; font-size: 13px; }
+        .mention-item:hover, .mention-item.active { background: rgba(255,255,255,0.05); }
+
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            cursor: pointer; padding: 6px; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
         /* Board View */
         .board-view {
             display: none;
@@ -2626,40 +2772,59 @@
         </div>
     </div>
 
-    <!-- View Task Modal -->
-    <div class="modal-overlay" id="viewModal">
-        <div class="modal">
-            <button class="modal-close" onclick="closeViewModal()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-            </button>
-            <div class="modal-header">
-                <h2 class="modal-title" id="viewTaskKey">TASK-1</h2>
-            </div>
-            <div style="margin-bottom: 20px;">
-                <h3 id="viewTaskSummary" style="font-size: 18px; font-weight: 600; margin-bottom: 12px;"></h3>
-                <p id="viewTaskDescription" style="color: var(--text-secondary); line-height: 1.7;"></p>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                <div>
-                    <div class="form-label">Status</div>
-                    <span id="viewTaskStatus" class="status-badge"></span>
-                </div>
-                <div>
-                    <div class="form-label">Priority</div>
-                    <span id="viewTaskPriority"></span>
-                </div>
-                <div>
-                    <div class="form-label">Project</div>
-                    <span id="viewTaskProject"></span>
-                </div>
-                <div>
-                    <div class="form-label">Due Date</div>
-                    <span id="viewTaskDueDate" style="color: var(--text-secondary);"></span>
+    <!-- Task Detail Modal -->
+    <div class="modal-overlay" id="viewModal" onclick="if(event.target===this)closeViewModal()">
+        <div class="task-detail-modal">
+            <div class="task-detail-header">
+                <span class="task-detail-key" id="viewTaskKey"></span>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" onclick="editFromView()">Edit</button>
+                    <button class="icon-btn" onclick="closeViewModal()" title="Close">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                 </div>
             </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="editFromView()">Edit Task</button>
+            <div class="task-detail-body">
+                <!-- Left: main content -->
+                <div class="task-detail-main">
+                    <h2 class="task-detail-title" id="viewTaskSummary"></h2>
+                    <div class="task-detail-section">
+                        <div class="td-label">Description</div>
+                        <p id="viewTaskDescription" style="color:var(--text-secondary);line-height:1.75;font-size:14px;white-space:pre-wrap;"></p>
+                    </div>
+                    <!-- Activity / Comments -->
+                    <div class="task-detail-section">
+                        <div class="td-label">Activity</div>
+                        <div id="commentsList" style="margin-bottom:20px;"></div>
+                        <div class="comment-compose">
+                            <div class="comment-avatar" id="commentUserAvatar" style="flex-shrink:0;"></div>
+                            <div style="flex:1;position:relative;">
+                                <div class="comment-input-wrapper">
+                                    <textarea class="comment-textarea" id="commentInput" placeholder="Add a comment… type @ to mention someone"></textarea>
+                                    <div id="commentImagePreview" class="comment-image-preview"></div>
+                                    <div class="comment-toolbar">
+                                        <label class="icon-btn" title="Attach image" style="cursor:pointer;">
+                                            <input type="file" id="commentImageInput" accept="image/*" style="display:none;" onchange="handleCommentImage(this)">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                        </label>
+                                        <button class="btn btn-primary" style="padding:5px 16px;font-size:12px;" onclick="submitComment()">Save</button>
+                                    </div>
+                                </div>
+                                <div id="mentionDropdown" class="mention-dropdown" style="display:none;bottom:100%;left:0;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right: details sidebar -->
+                <div class="task-detail-sidebar">
+                    <div class="td-label" style="margin-bottom:14px;">Details</div>
+                    <div id="viewTaskDetails"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Full image viewer -->
+        <div id="imgViewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10001;cursor:zoom-out;display:none;align-items:center;justify-content:center;" onclick="this.style.display='none'">
+            <img id="imgViewerSrc" style="max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain;">
         </div>
     </div>
 
@@ -3492,21 +3657,208 @@
             }
         });
 
-        function viewTask(id) {
+        let commentImages = [];
+        let mentionStart = -1;
+
+        async function viewTask(id) {
             const numId = parseInt(id);
             const t = tasks.find(x => parseInt(x.id) === numId);
             if (!t) return;
             currentViewTaskId = numId;
-            document.getElementById('viewTaskKey').textContent = t.key;
+
+            const keyEl = document.getElementById('viewTaskKey');
+            keyEl.textContent = t.key;
+            keyEl.style.color = t.project_color || 'var(--accent)';
             document.getElementById('viewTaskSummary').textContent = t.summary;
-            document.getElementById('viewTaskDescription').textContent = t.description || 'No description';
-            const status = document.getElementById('viewTaskStatus');
-            status.textContent = getStatusLabel(t.status);
-            status.className = `status-badge ${t.status}`;
-            document.getElementById('viewTaskPriority').innerHTML = `<span class="priority-badge ${t.priority}">${getPriorityIcon(t.priority)} ${capitalize(t.priority)}</span>`;
-            document.getElementById('viewTaskProject').innerHTML = `<span class="project-tag"><span class="dot" style="background:${t.project_color || '#84cc16'}"></span>${escapeHtml(t.project_name)}</span>`;
-            document.getElementById('viewTaskDueDate').textContent = t.due_date || 'No due date';
+            document.getElementById('viewTaskDescription').textContent = t.description || 'No description provided.';
+
+            const dueClass = getDueClass(t.due_date);
+            document.getElementById('viewTaskDetails').innerHTML = `
+                <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val">
+                    <select class="inline-select status-pill ${t.status}" style="width:auto;" onchange="this.className='inline-select status-pill '+this.value;quickUpdateTask(${t.id},'status',this.value);">
+                        <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+                        <option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option>
+                        <option value="review" ${t.status==='review'?'selected':''}>For Review</option>
+                        <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+                    </select>
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Priority</div><div class="detail-val">
+                    <select class="inline-select priority-select ${t.priority}" style="width:auto;" onchange="this.className='inline-select priority-select '+this.value;quickUpdateTask(${t.id},'priority',this.value);">
+                        <option value="high" ${t.priority==='high'?'selected':''}>↑ High</option>
+                        <option value="medium" ${t.priority==='medium'?'selected':''}>→ Medium</option>
+                        <option value="low" ${t.priority==='low'?'selected':''}>↓ Low</option>
+                    </select>
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Project</div><div class="detail-val">
+                    <span class="project-tag"><span class="dot" style="background:${t.project_color||'#84cc16'}"></span>${escapeHtml(t.project_name)}</span>
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Assignee</div><div class="detail-val" style="display:flex;align-items:center;gap:8px;">
+                    ${t.assignee_name
+                        ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;">${getInitials(t.assignee_name)}</div><span>${escapeHtml(t.assignee_name)}</span>`
+                        : `<span style="color:var(--text-muted);">Unassigned</span>`}
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Reporter</div><div class="detail-val" style="display:flex;align-items:center;gap:8px;">
+                    ${t.creator_name
+                        ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);">${getInitials(t.creator_name)}</div><span>${escapeHtml(t.creator_name)}</span>`
+                        : `<span style="color:var(--text-muted);">—</span>`}
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Due Date</div><div class="detail-val" style="${dueClass==='overdue'?'color:var(--danger)':dueClass==='soon'?'color:var(--warning)':''}">
+                    ${t.due_date ? formatDate(t.due_date) : '<span style="color:var(--text-muted);">No due date</span>'}
+                </div></div>
+                <div class="detail-row"><div class="detail-key">Ministry</div><div class="detail-val">${escapeHtml(t.ministry||'General')}</div></div>
+                <div class="detail-row"><div class="detail-key">Created</div><div class="detail-val" style="color:var(--text-muted);">${t.created_at?formatDate(t.created_at):'—'}</div></div>
+            `;
+
+            if (currentUser) {
+                const av = document.getElementById('commentUserAvatar');
+                av.textContent = getInitials(currentUser.name);
+            }
+            document.getElementById('commentInput').value = '';
+            commentImages = [];
+            document.getElementById('commentImagePreview').innerHTML = '';
+
             document.getElementById('viewModal').classList.add('show');
+            await loadComments(numId);
+        }
+
+        async function loadComments(taskId) {
+            try {
+                const comments = await api(`/tasks/${taskId}/comments`);
+                const list = document.getElementById('commentsList');
+                if (!comments.length) {
+                    list.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:4px 0 12px;">No comments yet.</p>';
+                    return;
+                }
+                list.innerHTML = comments.map(c => `
+                    <div class="comment-item">
+                        <div class="comment-avatar" style="background:linear-gradient(135deg,var(--accent),var(--accent-light));">${getInitials(c.user_name||'?')}</div>
+                        <div class="comment-body">
+                            <div class="comment-meta">
+                                <span class="comment-author">${escapeHtml(c.user_name||'Unknown')}</span>
+                                <span class="comment-time">${formatDate(c.created_at)}</span>
+                                ${(c.user_id===currentUser?.id||currentUser?.is_admin)?`<button class="icon-btn" style="margin-left:auto;padding:3px;" onclick="deleteComment(${c.id})" title="Delete comment"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>`:''}
+                            </div>
+                            <div class="comment-text">${renderMentions(escapeHtml(c.content))}</div>
+                            ${c.image_data?`<img class="comment-img" src="${c.image_data}" onclick="openImgViewer(this.src)">`:''}
+                        </div>
+                    </div>`).join('');
+            } catch(err) { console.error('Failed to load comments', err); }
+        }
+
+        function renderMentions(html) {
+            return html.replace(/@([\w. ]+)/g, '<span class="mention">@$1</span>');
+        }
+
+        async function submitComment() {
+            const input = document.getElementById('commentInput');
+            const content = input.value.trim();
+            if (!content && !commentImages.length) return;
+            try {
+                await api(`/tasks/${currentViewTaskId}/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify({ content, image_data: commentImages[0] || null })
+                });
+                input.value = '';
+                commentImages = [];
+                document.getElementById('commentImagePreview').innerHTML = '';
+                hideMentionDropdown();
+                await loadComments(currentViewTaskId);
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        async function deleteComment(commentId) {
+            if (!confirm('Delete this comment?')) return;
+            try {
+                await api(`/comments/${commentId}`, { method: 'DELETE' });
+                await loadComments(currentViewTaskId);
+            } catch(err) { showToast(err.message, 'error'); }
+        }
+
+        function handleCommentImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                commentImages = [e.target.result];
+                document.getElementById('commentImagePreview').innerHTML = `
+                    <div style="position:relative;display:inline-block;">
+                        <img src="${e.target.result}" style="height:56px;width:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border-color);cursor:zoom-in;" onclick="openImgViewer(this.src)">
+                        <button onclick="removeCommentImage()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;color:white;font-size:12px;line-height:1;padding:0;">×</button>
+                    </div>`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCommentImage() {
+            commentImages = [];
+            document.getElementById('commentImagePreview').innerHTML = '';
+            document.getElementById('commentImageInput').value = '';
+        }
+
+        function openImgViewer(src) {
+            const v = document.getElementById('imgViewer');
+            document.getElementById('imgViewerSrc').src = src;
+            v.style.display = 'flex';
+        }
+
+        function hideMentionDropdown() {
+            const d = document.getElementById('mentionDropdown');
+            if (d) d.style.display = 'none';
+            mentionStart = -1;
+        }
+
+        function setupCommentMentions() {
+            const textarea = document.getElementById('commentInput');
+            if (!textarea || textarea._mentionReady) return;
+            textarea._mentionReady = true;
+
+            textarea.addEventListener('input', function() {
+                const val = this.value, cur = this.selectionStart;
+                let i = cur - 1;
+                while (i >= 0 && val[i] !== ' ' && val[i] !== '\n') {
+                    if (val[i] === '@') { mentionStart = i; break; }
+                    i--;
+                }
+                if (i >= 0 && val[i] === '@') {
+                    const query = val.substring(mentionStart + 1, cur).toLowerCase();
+                    const matches = teamMembers.filter(u => u.name.toLowerCase().includes(query));
+                    const dd = document.getElementById('mentionDropdown');
+                    if (!matches.length) { hideMentionDropdown(); return; }
+                    dd.innerHTML = matches.map(u => `
+                        <div class="mention-item" onclick="insertMention('${escapeHtml(u.name)}')">
+                            <div class="comment-avatar" style="width:24px;height:24px;font-size:10px;">${getInitials(u.name)}</div>
+                            <span>${escapeHtml(u.name)}</span>
+                        </div>`).join('');
+                    dd.style.display = 'block';
+                } else { hideMentionDropdown(); }
+            });
+
+            textarea.addEventListener('keydown', function(e) {
+                const dd = document.getElementById('mentionDropdown');
+                if (dd.style.display === 'none') return;
+                const items = dd.querySelectorAll('.mention-item');
+                let idx = Array.from(items).findIndex(el => el.classList.contains('active'));
+                if (e.key === 'ArrowDown') { e.preventDefault(); items[idx]?.classList.remove('active'); items[Math.min(idx+1,items.length-1)].classList.add('active'); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); items[idx]?.classList.remove('active'); items[Math.max(idx-1,0)].classList.add('active'); }
+                else if (e.key === 'Enter' || e.key === 'Tab') {
+                    const active = dd.querySelector('.mention-item.active') || dd.querySelector('.mention-item');
+                    if (active) { e.preventDefault(); insertMention(active.querySelector('span').textContent); }
+                } else if (e.key === 'Escape') hideMentionDropdown();
+            });
+
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submitComment(); }
+            });
+        }
+
+        function insertMention(name) {
+            const textarea = document.getElementById('commentInput');
+            const val = textarea.value, cur = textarea.selectionStart;
+            textarea.value = val.substring(0, mentionStart) + '@' + name + ' ' + val.substring(cur);
+            const pos = mentionStart + name.length + 2;
+            textarea.setSelectionRange(pos, pos);
+            textarea.focus();
+            hideMentionDropdown();
         }
 
         function closeViewModal() {
@@ -3841,6 +4193,7 @@
 
         // Init
         checkAuth();
+        setupCommentMentions();
     </script>
 </body>
 </html>

@@ -168,6 +168,17 @@ async function initDatabase() {
 
         await client.query(`UPDATE users SET is_admin = TRUE WHERE email IN ('audrey.john@pray.com', 'kazulumod@gmail.com')`);
 
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS comments (
+                id SERIAL PRIMARY KEY,
+                task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                content TEXT NOT NULL DEFAULT '',
+                image_data TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
         console.log('Database initialized');
     } finally {
         client.release();
@@ -840,6 +851,48 @@ app.get('/api/users/all', authenticate, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
+});
+
+// ============== COMMENT ROUTES ==============
+
+app.get('/api/tasks/:id/comments', authenticate, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT c.*, u.name as user_name FROM comments c
+             LEFT JOIN users u ON c.user_id = u.id
+             WHERE c.task_id = $1 ORDER BY c.created_at ASC`,
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/tasks/:id/comments', authenticate, async (req, res) => {
+    const { content, image_data } = req.body;
+    if (!content && !image_data) return res.status(400).json({ error: 'Comment cannot be empty' });
+    try {
+        const result = await pool.query(
+            `INSERT INTO comments (task_id, user_id, content, image_data)
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [req.params.id, req.user.id, content || '', image_data || null]
+        );
+        const comment = result.rows[0];
+        const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+        comment.user_name = userResult.rows[0]?.name;
+        res.status(201).json(comment);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/comments/:id', authenticate, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT user_id FROM comments WHERE id = $1', [req.params.id]);
+        if (!result.rows[0]) return res.status(404).json({ error: 'Comment not found' });
+        const adminCheck = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+        if (result.rows[0].user_id !== req.user.id && !adminCheck.rows[0]?.is_admin)
+            return res.status(403).json({ error: 'Not authorized' });
+        await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Deleted' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // Serve frontend
