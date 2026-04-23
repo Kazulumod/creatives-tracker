@@ -3139,6 +3139,9 @@
         </div>
     </div>
 
+    <!-- Global assignee dropdown portal (outside all modals/transforms) -->
+    <div id="assigneePortal" class="assignee-picker-list"></div>
+
     <!-- Task Detail Modal -->
     <div class="modal-overlay" id="viewModal" onclick="if(event.target===this)closeViewModal()">
         <div class="task-detail-modal">
@@ -3613,8 +3616,10 @@
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.user-menu')) closeUserMenu();
-            if (!e.target.closest('.assignee-picker')) {
-                document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
+            // Close assignee portal when clicking outside the portal or any assignee picker
+            if (!e.target.closest('#assigneePortal') && !e.target.closest('.assignee-picker')) {
+                document.getElementById('assigneePortal')?.classList.remove('show');
+                _portalCallback = null;
             }
         });
 
@@ -4600,55 +4605,73 @@
             }
         }
 
-        function toggleAssigneePicker(el) {
-            const list = el.querySelector('.assignee-picker-list');
-            const isOpen = list.classList.contains('show');
-            document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
-            if (!isOpen) {
-                // Rebuild items dynamically for data-driven pickers (sidebar, board)
-                const taskId = el.dataset.taskId;
-                if (taskId) {
-                    const assigneeId = el.dataset.assigneeId;
-                    const color = el.dataset.projectColor || 'var(--accent)';
-                    list.innerHTML =
-                        `<div class="assignee-picker-item" onclick="event.stopPropagation();pickAssignee(${taskId},null,this.closest('.assignee-picker'))">— Unassigned</div>` +
-                        teamMembers.map(u =>
-                            `<div class="assignee-picker-item ${String(u.id)===String(assigneeId)?'selected':''}" onclick="event.stopPropagation();pickAssignee(${taskId},${u.id},this.closest('.assignee-picker'))">
-                                <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color} 0%,#f97316 100%);">${getInitials(u.name)}</div>
-                                <span>${escapeHtml(u.name)}</span>
-                            </div>`
-                        ).join('');
-                }
-                const rect = el.getBoundingClientRect();
-                list.style.top = (rect.bottom + 4) + 'px';
-                list.style.left = rect.left + 'px';
-                list.style.minWidth = Math.max(190, rect.width) + 'px';
-                list.classList.add('show');
+        // ── Assignee portal (single global dropdown, outside any modal/transform) ──
+        let _portalCallback = null;
+
+        function _openAssigneePortal(anchorEl, currentAssigneeId, projectColor, callback) {
+            const portal = document.getElementById('assigneePortal');
+            const isOpen = portal.classList.contains('show') && _portalCallback !== null;
+            // Toggle closed if same anchor clicked again
+            if (isOpen && portal._anchor === anchorEl) {
+                portal.classList.remove('show');
+                _portalCallback = null;
+                return;
             }
+            _portalCallback = callback;
+            portal._anchor = anchorEl;
+            const color = projectColor || 'var(--accent)';
+            portal.innerHTML =
+                `<div class="assignee-picker-item" onclick="_portalSelect(null,'')">— Unassigned</div>` +
+                teamMembers.map(u =>
+                    `<div class="assignee-picker-item ${String(u.id)===String(currentAssigneeId)?'selected':''}"
+                          onclick="_portalSelect(${u.id},${JSON.stringify(u.name)})">
+                        <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color} 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                        <span>${escapeHtml(u.name)}</span>
+                    </div>`
+                ).join('');
+            const rect = anchorEl.getBoundingClientRect();
+            portal.style.top  = (rect.bottom + 4) + 'px';
+            portal.style.left = rect.left + 'px';
+            portal.style.minWidth = Math.max(190, rect.width) + 'px';
+            portal.classList.add('show');
+        }
+
+        function _portalSelect(userId, userName) {
+            document.getElementById('assigneePortal').classList.remove('show');
+            if (_portalCallback) { _portalCallback(userId, userName); _portalCallback = null; }
+        }
+
+        function toggleAssigneePicker(el) {
+            const taskId     = el.dataset.taskId;
+            const assigneeId = el.dataset.assigneeId;
+            const color      = el.dataset.projectColor;
+            _openAssigneePortal(el, assigneeId, color, async (userId) => {
+                // Update display
+                const avatar = userId
+                    ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(teamMembers.find(u=>String(u.id)===String(userId))?.name||'')}</div><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(teamMembers.find(u=>String(u.id)===String(userId))?.name||'')}</span>`
+                    : `<span style="color:var(--text-muted);">Unassigned</span>`;
+                // Keep the list div, replace visual content before it
+                const list = el.querySelector('.assignee-picker-list');
+                el.innerHTML = avatar + (list ? list.outerHTML : '<div class="assignee-picker-list"></div>');
+                el.dataset.assigneeId = userId || '';
+                await quickUpdateTask(taskId, 'assignee_id', userId);
+            });
         }
 
         async function pickAssignee(taskId, userId, pickerEl) {
-            pickerEl.querySelector('.assignee-picker-list').classList.remove('show');
             await quickUpdateTask(taskId, 'assignee_id', userId);
         }
 
         function toggleModalAssigneePicker(el) {
-            const list = el.querySelector('.assignee-picker-list');
-            const isOpen = list.classList.contains('show');
-            document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
-            if (!isOpen) {
-                const rect = el.getBoundingClientRect();
-                list.style.top = (rect.bottom + 4) + 'px';
-                list.style.left = rect.left + 'px';
-                list.style.minWidth = Math.max(190, rect.width) + 'px';
-                list.classList.add('show');
-            }
+            const currentId = document.getElementById('taskAssigneeId').value;
+            _openAssigneePortal(el, currentId, null, (userId, userName) => {
+                selectModalAssignee(userId, userName);
+            });
         }
 
         function selectModalAssignee(userId, userName) {
             document.getElementById('taskAssigneeId').value = userId || '';
             const display = document.getElementById('modalAssigneeDisplay');
-            const list = document.querySelector('#modalAssigneePicker .assignee-picker-list');
             if (userId && userName) {
                 display.style.color = '';
                 display.innerHTML = `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,var(--accent) 0%,#f97316 100%);flex-shrink:0;">${getInitials(userName)}</div><span>${escapeHtml(userName)}</span>`;
@@ -4656,7 +4679,6 @@
                 display.style.color = 'var(--text-muted)';
                 display.innerHTML = 'Unassigned';
             }
-            if (list) list.classList.remove('show');
         }
 
         async function quickUpdateTask(id, field, value) {
