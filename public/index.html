@@ -1457,6 +1457,68 @@
             overflow: hidden;
         }
 
+        /* Assignee picker (custom dropdown with avatars) */
+        .assignee-picker {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 22px 4px 6px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: background 0.15s, border-color 0.15s;
+            font-size: var(--font-sm);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+        }
+
+        .assignee-picker:hover {
+            border-color: rgba(255,255,255,0.2);
+            background-color: rgba(255,255,255,0.07);
+        }
+
+        [data-theme="light"] .assignee-picker:hover {
+            border-color: rgba(100,116,139,0.4);
+            background-color: #f1f5f9;
+        }
+
+        .assignee-picker-list {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            min-width: 190px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            z-index: 250;
+            overflow-y: auto;
+            max-height: 220px;
+        }
+
+        .assignee-picker-list.show { display: block; }
+
+        .assignee-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: var(--font-sm);
+            color: var(--text-primary);
+            transition: background 0.1s;
+        }
+
+        .assignee-picker-item:hover { background: var(--bg-card-hover); }
+        .assignee-picker-item.selected { background: var(--bg-input); }
+
         .assignee-avatar-sm {
             width: 24px;
             height: 24px;
@@ -3523,6 +3585,9 @@
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.user-menu')) closeUserMenu();
+            if (!e.target.closest('.assignee-picker')) {
+                document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
+            }
         });
 
         // Init App
@@ -3823,8 +3888,15 @@
             const dueIcon = dueClass === 'overdue'
                 ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
                 : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
-            const assigneeOpts = `<option value="">Unassigned</option>` +
-                teamMembers.map(u => `<option value="${u.id}" ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}>${escapeHtml(u.name)}</option>`).join('');
+            const assigneePickerItems =
+                `<div class="assignee-picker-item" onclick="event.stopPropagation();pickAssignee(${t.id},null,this.closest('.assignee-picker'))">
+                    <span style="color:var(--text-muted);">— Unassigned</span>
+                </div>` +
+                teamMembers.map(u => `
+                <div class="assignee-picker-item ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}" onclick="event.stopPropagation();pickAssignee(${t.id},${u.id},this.closest('.assignee-picker'))">
+                    <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                    <span>${escapeHtml(u.name)}</span>
+                </div>`).join('');
             return `
             <div class="task-row">
                 <div style="display:flex;align-items:center;padding:0 10px;">
@@ -3855,7 +3927,13 @@
                     </select>
                 </div>
                 <div style="padding:0 10px;">
-                    <select class="inline-select" onchange="quickUpdateTask(${t.id},'assignee_id',this.value||null)">${assigneeOpts}</select>
+                    <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)">
+                        ${t.assignee_name
+                            ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div>
+                               <span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.assignee_name)}</span>`
+                            : `<span style="color:var(--text-muted);">Unassigned</span>`}
+                        <div class="assignee-picker-list">${assigneePickerItems}</div>
+                    </div>
                 </div>
                 <div style="padding:0 10px; position:relative;">
                     <button type="button" class="inline-date-btn ${dueClass}" onclick="event.stopPropagation(); this.nextElementSibling.showPicker();">
@@ -4481,6 +4559,18 @@
             } catch (err) {
                 showToast(err.message, 'error');
             }
+        }
+
+        function toggleAssigneePicker(el) {
+            const list = el.querySelector('.assignee-picker-list');
+            const isOpen = list.classList.contains('show');
+            document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
+            if (!isOpen) list.classList.add('show');
+        }
+
+        async function pickAssignee(taskId, userId, pickerEl) {
+            pickerEl.querySelector('.assignee-picker-list').classList.remove('show');
+            await quickUpdateTask(taskId, 'assignee_id', userId);
         }
 
         async function quickUpdateTask(id, field, value) {
