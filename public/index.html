@@ -1773,14 +1773,13 @@
             font-family: inherit;
             font-size: var(--font-md);
             line-height: var(--leading-normal);
-            color: transparent;
+            color: var(--text-primary);
             white-space: pre-wrap;
             word-break: break-word;
             pointer-events: none;
             overflow: hidden;
             box-sizing: border-box;
             z-index: 0;
-            border-radius: 0;
         }
         .mention-backdrop .mention-tag {
             color: var(--info);
@@ -1788,7 +1787,14 @@
             background: rgba(99,102,241,0.15);
             border-radius: 3px;
         }
-        .comment-textarea { position: relative; z-index: 1; }
+        /* Hide textarea's own text so only the backdrop renders it */
+        .comment-textarea {
+            position: relative;
+            z-index: 1;
+            color: transparent;
+            caret-color: var(--text-primary);
+        }
+        .comment-textarea::placeholder { color: var(--text-muted); }
 
         .icon-btn {
             background: transparent; border: none; color: var(--text-secondary);
