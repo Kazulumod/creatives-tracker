@@ -769,11 +769,11 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
             const changerResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
             const changerName = changerResult.rows[0]?.name || 'Someone';
 
-            // Collect involved users: creator + assignee (deduplicated, exclude the person making the change)
+            // Notify creator + assignee via in-app always; email only to non-changers
             const involvedIds = new Set();
-            if (task.creator_id && task.creator_id !== req.user.id) involvedIds.add(task.creator_id);
+            if (task.creator_id) involvedIds.add(task.creator_id);
             const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
-            if (newAssigneeId && newAssigneeId !== req.user.id) involvedIds.add(newAssigneeId);
+            if (newAssigneeId) involvedIds.add(newAssigneeId);
 
             if (involvedIds.size) {
                 const involvedResult = await pool.query(
@@ -783,12 +783,13 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                 const isNewAssignee = assignee_id && String(assignee_id) !== String(task.assignee_id);
                 const changeDesc = changes.map(c => `${c.label}: ${c.value}`).join(', ');
                 for (const u of involvedResult.rows) {
+                    const isChanger = String(u.id) === String(req.user.id);
                     if (isNewAssignee && String(u.id) === String(assignee_id)) {
-                        sendAssignmentEmail(u.email, u.name, updatedTask.summary, updatedTask.key, changerName);
+                        if (!isChanger) sendAssignmentEmail(u.email, u.name, updatedTask.summary, updatedTask.key, changerName);
                         createNotification(u.id, 'assignment',
                             `${changerName} assigned you to [${updatedTask.key}]: ${updatedTask.summary}`, taskId);
                     } else {
-                        sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
+                        if (!isChanger) sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
                         createNotification(u.id, 'task_update',
                             `${changerName} updated [${updatedTask.key}]: ${updatedTask.summary} — ${changeDesc}`, taskId);
                     }
