@@ -27,42 +27,122 @@ if (EMAIL_USER && EMAIL_PASS) {
     });
 }
 
-// Send assignment notification email
-async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, taskKey, assignerName) {
-    if (!transporter) {
-        console.log('Email not configured - skipping notification');
-        return;
-    }
+// ── Shared email layout ─────────────────────────────────────
+function emailLayout(bodyHtml) {
+    return `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+            <div style="background:#84cc16;padding:18px 24px;border-radius:8px 8px 0 0;">
+                <h1 style="color:#09090b;margin:0;font-size:20px;letter-spacing:-0.3px;">Creatives Tracker</h1>
+            </div>
+            <div style="padding:28px 32px;background:#f9fafb;border:1px solid #e5e7eb;border-top:none;">
+                ${bodyHtml}
+                <div style="margin-top:24px;">
+                    <a href="https://creatives-tracker.onrender.com"
+                       style="display:inline-block;background:#84cc16;color:#09090b;padding:10px 22px;
+                              text-decoration:none;border-radius:6px;font-weight:700;font-size:14px;">
+                        Open Creatives Tracker
+                    </a>
+                </div>
+            </div>
+            <div style="padding:14px;text-align:center;color:#9ca3af;font-size:12px;">
+                Creatives Tracker · You're receiving this because you're involved in this task.
+            </div>
+        </div>`;
+}
 
+function taskCard(taskKey, taskSummary) {
+    return `<div style="background:#fff;border-left:4px solid #84cc16;padding:16px 20px;
+                         border-radius:4px;margin:16px 0;border:1px solid #e5e7eb;">
+                <p style="margin:0 0 4px;color:#6b7280;font-size:11px;text-transform:uppercase;
+                           letter-spacing:0.5px;">${taskKey}</p>
+                <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">${taskSummary}</p>
+            </div>`;
+}
+
+async function sendAssignmentEmail(assigneeEmail, assigneeName, taskSummary, taskKey, assignerName) {
+    if (!transporter) return;
     try {
         await transporter.sendMail({
             from: EMAIL_FROM,
             to: assigneeEmail,
-            subject: `[${taskKey}] You've been assigned a task`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <div style="background: #84cc16; padding: 20px; text-align: center;">
-                        <h1 style="color: #09090b; margin: 0;">Creatives Tracker</h1>
-                    </div>
-                    <div style="padding: 30px; background: #f8f8f8;">
-                        <h2 style="color: #333;">Hi ${assigneeName},</h2>
-                        <p style="color: #666; font-size: 16px;">You've been assigned a new task by <strong>${assignerName}</strong>:</p>
-                        <div style="background: white; border-left: 4px solid #84cc16; padding: 20px; margin: 20px 0;">
-                            <p style="margin: 0; color: #888; font-size: 12px;">${taskKey}</p>
-                            <h3 style="margin: 8px 0 0 0; color: #333;">${taskSummary}</h3>
-                        </div>
-                        <a href="https://creatives-tracker.onrender.com" style="display: inline-block; background: #84cc16; color: #09090b; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Task</a>
-                    </div>
-                    <div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
-                        Creatives Tracker - Manage Your Projects Effortlessly
-                    </div>
-                </div>
-            `
+            subject: `[${taskKey}] You've been assigned: ${taskSummary}`,
+            html: emailLayout(`
+                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${assigneeName}</strong>,</p>
+                <p style="color:#6b7280;margin:4px 0 0;">
+                    <strong>${assignerName}</strong> assigned you a task:
+                </p>
+                ${taskCard(taskKey, taskSummary)}
+            `)
         });
-        console.log(`Assignment email sent to ${assigneeEmail}`);
-    } catch (err) {
-        console.error('Failed to send email:', err);
-    }
+        console.log(`Assignment email → ${assigneeEmail}`);
+    } catch (err) { console.error('Assignment email failed:', err.message); }
+}
+
+async function sendMentionEmail(toEmail, toName, mentionedByName, taskSummary, taskKey, commentText) {
+    if (!transporter) return;
+    const preview = commentText.length > 200 ? commentText.slice(0, 200) + '…' : commentText;
+    try {
+        await transporter.sendMail({
+            from: EMAIL_FROM,
+            to: toEmail,
+            subject: `[${taskKey}] ${mentionedByName} mentioned you`,
+            html: emailLayout(`
+                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
+                <p style="color:#6b7280;margin:4px 0 16px;">
+                    <strong>${mentionedByName}</strong> mentioned you in a comment on:
+                </p>
+                ${taskCard(taskKey, taskSummary)}
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:14px 18px;
+                             color:#374151;font-size:14px;line-height:1.6;white-space:pre-wrap;">
+                    ${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+                </div>
+            `)
+        });
+        console.log(`Mention email → ${toEmail}`);
+    } catch (err) { console.error('Mention email failed:', err.message); }
+}
+
+async function sendTaskUpdateEmail(toEmail, toName, changerName, taskSummary, taskKey, changes) {
+    if (!transporter || !changes.length) return;
+    const changeRows = changes
+        .map(c => `<tr><td style="padding:6px 0;color:#6b7280;font-size:13px;width:110px;
+                        vertical-align:top;">${c.label}</td>
+                       <td style="padding:6px 0;color:#111827;font-size:13px;">${c.value}</td></tr>`)
+        .join('');
+    try {
+        await transporter.sendMail({
+            from: EMAIL_FROM,
+            to: toEmail,
+            subject: `[${taskKey}] Task updated: ${taskSummary}`,
+            html: emailLayout(`
+                <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
+                <p style="color:#6b7280;margin:4px 0 16px;">
+                    <strong>${changerName}</strong> updated a task you're involved in:
+                </p>
+                ${taskCard(taskKey, taskSummary)}
+                <table style="width:100%;border-collapse:collapse;margin-top:4px;">${changeRows}</table>
+            `)
+        });
+        console.log(`Update email → ${toEmail}`);
+    } catch (err) { console.error('Task update email failed:', err.message); }
+}
+
+function detectTaskChanges(old, body) {
+    const statusLabels = { todo: 'To Do', progress: 'In Progress', review: 'For Review', done: 'Done' };
+    const changes = [];
+    if (body.status && body.status !== old.status)
+        changes.push({ label: 'Status', value: `${statusLabels[old.status] || old.status} → ${statusLabels[body.status] || body.status}` });
+    if (body.priority && body.priority !== old.priority)
+        changes.push({ label: 'Priority', value: `${old.priority} → ${body.priority}` });
+    if (body.due_date !== undefined && body.due_date !== old.due_date)
+        changes.push({ label: 'Due Date', value: body.due_date || 'Removed' });
+    if (body.summary && body.summary !== old.summary)
+        changes.push({ label: 'Title', value: body.summary });
+    if (body.assignee_id !== undefined && String(body.assignee_id) !== String(old.assignee_id))
+        changes.push({ label: 'Assignee', value: 'Changed' });
+    if (body.ministry && body.ministry !== old.ministry)
+        changes.push({ label: 'Ministry', value: body.ministry });
+    return changes;
 }
 
 // PostgreSQL Connection
@@ -673,12 +753,33 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
 
         const updatedTask = updatedResult.rows[0];
 
-        // Send email if assignee changed and new assignee is set
-        const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
-        if (newAssigneeId && newAssigneeId !== task.assignee_id && updatedTask.assignee_email) {
-            const assignerResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
-            const assignerName = assignerResult.rows[0]?.name || 'Someone';
-            sendAssignmentEmail(updatedTask.assignee_email, updatedTask.assignee_name, updatedTask.summary, updatedTask.key, assignerName);
+        // Determine what changed and notify involved users
+        const changes = detectTaskChanges(task, req.body);
+        if (changes.length) {
+            const changerResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+            const changerName = changerResult.rows[0]?.name || 'Someone';
+
+            // Collect involved users: creator + assignee (deduplicated, exclude the person making the change)
+            const involvedIds = new Set();
+            if (task.creator_id && task.creator_id !== req.user.id) involvedIds.add(task.creator_id);
+            const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
+            if (newAssigneeId && newAssigneeId !== req.user.id) involvedIds.add(newAssigneeId);
+
+            if (involvedIds.size) {
+                const involvedResult = await pool.query(
+                    'SELECT id, name, email FROM users WHERE id = ANY($1)',
+                    [Array.from(involvedIds)]
+                );
+                const isNewAssignee = assignee_id && String(assignee_id) !== String(task.assignee_id);
+                for (const u of involvedResult.rows) {
+                    if (isNewAssignee && String(u.id) === String(assignee_id)) {
+                        // New assignee gets an assignment email instead of a generic update
+                        sendAssignmentEmail(u.email, u.name, updatedTask.summary, updatedTask.key, changerName);
+                    } else {
+                        sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
+                    }
+                }
+            }
         }
 
         res.json(updatedTask);
@@ -877,8 +978,29 @@ app.post('/api/tasks/:id/comments', authenticate, async (req, res) => {
             [req.params.id, req.user.id, content || '', image_data || null]
         );
         const comment = result.rows[0];
-        const userResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
-        comment.user_name = userResult.rows[0]?.name;
+        const commenterResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+        comment.user_name = commenterResult.rows[0]?.name;
+        const commenterName = comment.user_name || 'Someone';
+
+        // Send @mention emails
+        if (content) {
+            const mentionMatches = [...new Set((content.match(/@([\w][^\n@]*)/g) || []).map(m => m.slice(1).trim()))];
+            if (mentionMatches.length) {
+                const taskResult = await pool.query('SELECT key, summary FROM tasks WHERE id = $1', [req.params.id]);
+                const task = taskResult.rows[0];
+                for (const mentionedName of mentionMatches) {
+                    const userResult = await pool.query(
+                        'SELECT id, name, email FROM users WHERE name ILIKE $1 AND id != $2 LIMIT 1',
+                        [mentionedName, req.user.id]
+                    );
+                    if (userResult.rows[0]) {
+                        const u = userResult.rows[0];
+                        sendMentionEmail(u.email, u.name, commenterName, task.summary, task.key, content);
+                    }
+                }
+            }
+        }
+
         res.status(201).json(comment);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
