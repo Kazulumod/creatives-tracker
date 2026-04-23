@@ -4679,6 +4679,7 @@
         function filterByStatus(status, el) {
             currentFilters.status = status;
             document.querySelectorAll('.sidebar-item[data-filter]').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('#projectList .sidebar-item').forEach(i => i.classList.remove('active'));
             if (el) el.classList.add('active');
             document.getElementById('statusFilter').value = status;
             loadTasks();
@@ -4687,12 +4688,25 @@
         function filterByProject(id, el) {
             currentFilters.project = id;
             document.getElementById('projectFilter').value = id;
+            // Clear status sidebar highlights and highlight the selected workspace
+            document.querySelectorAll('.sidebar-item[data-filter]').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('#projectList .sidebar-item').forEach(i => i.classList.remove('active'));
+            if (el) el.classList.add('active');
             loadTasks();
         }
 
         document.getElementById('statusFilter').addEventListener('change', e => { currentFilters.status = e.target.value; loadTasks(); });
         document.getElementById('priorityFilter').addEventListener('change', e => { currentFilters.priority = e.target.value; loadTasks(); });
-        document.getElementById('projectFilter').addEventListener('change', e => { currentFilters.project = e.target.value; loadTasks(); });
+        document.getElementById('projectFilter').addEventListener('change', e => {
+            currentFilters.project = e.target.value;
+            // Clear workspace highlight when "All Projects" is selected from dropdown
+            if (!e.target.value || e.target.value === 'all') {
+                document.querySelectorAll('#projectList .sidebar-item').forEach(i => i.classList.remove('active'));
+                // Restore All Tasks highlight
+                document.querySelector('.sidebar-item[data-filter="all"]')?.classList.add('active');
+            }
+            loadTasks();
+        });
         document.getElementById('searchInput').addEventListener('input', e => { currentFilters.search = e.target.value; renderTasks(); });
 
         function setView(view) {
