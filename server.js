@@ -4,41 +4,38 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'creatives-tracker-secret-key-change-in-production';
 const INVITE_CODE = process.env.INVITE_CODE || 'CREATIVES2026';
 
-// Email — Brevo (brevo.com). Free tier, no domain verification needed.
-// Set BREVO_API_KEY and BREVO_SENDER in Render environment variables.
-const BREVO_API_KEY  = process.env.BREVO_API_KEY;
-const BREVO_SENDER   = process.env.BREVO_SENDER;   // verified sender email in Brevo
+// Email — Gmail SMTP via nodemailer.
+// Set GMAIL_USER and GMAIL_PASS (App Password) in Render environment variables.
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASS = process.env.GMAIL_PASS;
 
-if (BREVO_API_KEY && BREVO_SENDER) {
-    console.log(`Email configured via Brevo — sender: ${BREVO_SENDER}`);
+let transporter = null;
+if (GMAIL_USER && GMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: GMAIL_USER, pass: GMAIL_PASS }
+    });
+    console.log(`Email configured via Gmail — sender: ${GMAIL_USER}`);
 } else {
-    console.warn('Email not configured. Add BREVO_API_KEY and BREVO_SENDER to Render environment variables.');
+    console.warn('Email not configured. Add GMAIL_USER and GMAIL_PASS to Render environment variables.');
 }
 
 async function sendEmail(to, toName, subject, html) {
-    if (!BREVO_API_KEY || !BREVO_SENDER) return;
+    if (!transporter) return;
     try {
-        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'api-key': BREVO_API_KEY,
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: { name: 'Creatives Tracker', email: BREVO_SENDER },
-                to: [{ email: to, name: toName || to }],
-                subject,
-                htmlContent: html
-            })
+        await transporter.sendMail({
+            from: `"Creatives Tracker" <${GMAIL_USER}>`,
+            to,
+            subject,
+            html
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(JSON.stringify(data));
         console.log(`Email sent to ${to}`);
     } catch (err) {
         console.error('Email failed:', err.message);
