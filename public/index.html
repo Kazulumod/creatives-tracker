@@ -1519,6 +1519,27 @@
         .assignee-picker-item:hover { background: var(--bg-card-hover); }
         .assignee-picker-item.selected { background: var(--bg-input); }
 
+        .modal-assignee-picker {
+            width: 100%;
+            padding: 10px 28px 10px 12px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            font-size: var(--font-md);
+        }
+
+        [data-theme="light"] .modal-assignee-picker {
+            border-color: rgba(100,116,139,0.4);
+            background: #ffffff;
+        }
+
+        .modal-assignee-picker:hover {
+            border-color: var(--accent);
+        }
+
         .assignee-avatar-sm {
             width: 24px;
             height: 24px;
@@ -3091,9 +3112,11 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Assign To</label>
-                        <select class="form-input" id="taskAssignee">
-                            <option value="">Unassigned</option>
-                        </select>
+                        <input type="hidden" id="taskAssigneeId" value="">
+                        <div class="assignee-picker modal-assignee-picker" id="modalAssigneePicker" onclick="toggleModalAssigneePicker(this)">
+                            <span id="modalAssigneeDisplay" style="color:var(--text-muted);display:flex;align-items:center;gap:6px;min-width:0;flex:1;">Unassigned</span>
+                            <div class="assignee-picker-list"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -3627,7 +3650,6 @@
         function updateTeamMemberDropdowns() {
             const projectAssignee = document.getElementById('projectAssignee');
             const inviteSelect = document.getElementById('inviteUserSelect');
-            const taskAssignee = document.getElementById('taskAssignee');
 
             const optionsWithEmail = teamMembers.map(u =>
                 `<option value="${u.id}" data-email="${u.email}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
@@ -3639,7 +3661,19 @@
 
             projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + optionsNameOnly;
             inviteSelect.innerHTML = '<option value="">Select a team member</option>' + optionsWithEmail;
-            taskAssignee.innerHTML = '<option value="">Unassigned</option>' + optionsNameOnly;
+
+            // Populate modal assignee picker list
+            const modalPickerList = document.querySelector('#modalAssigneePicker .assignee-picker-list');
+            if (modalPickerList) {
+                modalPickerList.innerHTML =
+                    `<div class="assignee-picker-item" onclick="event.stopPropagation();selectModalAssignee(null,'')">— Unassigned</div>` +
+                    teamMembers.map(u =>
+                        `<div class="assignee-picker-item" onclick="event.stopPropagation();selectModalAssignee(${u.id},${JSON.stringify(u.name)})">
+                            <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,var(--accent) 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                            <span>${escapeHtml(u.name)}</span>
+                        </div>`
+                    ).join('');
+            }
         }
 
         // Check Auth
@@ -4037,6 +4071,14 @@
             const ministryOpts = ['Citichamps','Community Bible Study','Events','General','Sunday','Young Adults','Young Couples','Youth']
                 .map(m => `<option value="${m}" ${t.ministry === m ? 'selected' : ''}>${m}</option>`).join('');
             const desc = t.description ? escapeHtml(t.description) : '';
+            const boardAssigneeItems =
+                `<div class="assignee-picker-item" onclick="event.stopPropagation();pickAssignee(${t.id},null,this.closest('.assignee-picker'))">— Unassigned</div>` +
+                teamMembers.map(u =>
+                    `<div class="assignee-picker-item ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}" onclick="event.stopPropagation();pickAssignee(${t.id},${u.id},this.closest('.assignee-picker'))">
+                        <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                        <span>${escapeHtml(u.name)}</span>
+                    </div>`
+                ).join('');
             return `<div class="board-card" draggable="true" ondragstart="dragStart(event,${t.id})" ondragend="dragEnd(event)" onclick="viewTask(${t.id})">
                 <div class="board-card-key" style="color: ${t.project_color || 'var(--text-muted)'};">${t.key}</div>
                 <div class="board-card-summary">${escapeHtml(t.summary)}</div>
@@ -4057,7 +4099,12 @@
                     <select class="board-inline-select" onchange="quickUpdateTask(${t.id},'ministry',this.value);">${ministryOpts}</select>
                 </div>
                 <div class="board-card-footer">
-                    <div class="board-card-avatar">${getInitials(t.assignee_name || currentUser.name)}</div>
+                    <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)" style="padding:3px 22px 3px 4px;">
+                        ${t.assignee_name
+                            ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div>`
+                            : `<div class="board-card-avatar" style="opacity:0.5;">${getInitials(currentUser.name)}</div>`}
+                        <div class="assignee-picker-list">${boardAssigneeItems}</div>
+                    </div>
                 </div>
             </div>`;
         }
@@ -4080,7 +4127,7 @@
                     document.getElementById('taskStatus').value = t.status;
                     document.getElementById('taskPriority').value = t.priority;
                     document.getElementById('taskMinistry').value = t.ministry || 'General';
-                    document.getElementById('taskAssignee').value = t.assignee_id || '';
+                    selectModalAssignee(t.assignee_id || null, t.assignee_name || '');
                     document.getElementById('taskProject').value = t.project_id;
                     document.getElementById('taskDueDate').value = t.due_date || '';
                 } else {
@@ -4093,7 +4140,7 @@
                 document.getElementById('taskStatus').value = 'todo';
                 document.getElementById('taskPriority').value = 'medium';
                 document.getElementById('taskMinistry').value = '';
-                document.getElementById('taskAssignee').value = '';
+                selectModalAssignee(null, '');
                 if (projects.length) document.getElementById('taskProject').value = projects[0].id;
                 document.getElementById('taskDueDate').value = '';
             }
@@ -4108,7 +4155,7 @@
             e.preventDefault();
 
             const id = currentEditTaskId || document.getElementById('taskId').value;
-            const assigneeValue = document.getElementById('taskAssignee').value;
+            const assigneeValue = document.getElementById('taskAssigneeId').value;
             const data = {
                 summary: document.getElementById('taskSummary').value,
                 description: document.getElementById('taskDescription').value,
@@ -4150,7 +4197,14 @@
 
             const dueClass = getDueClass(t.due_date);
             const projectOpts = projects.map(p => `<option value="${p.id}" ${parseInt(p.id)===parseInt(t.project_id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
-            const assigneeOpts = `<option value="">Unassigned</option>` + teamMembers.map(u => `<option value="${u.id}" ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}>${escapeHtml(u.name)}</option>`).join('');
+            const sidebarAssigneeItems =
+                `<div class="assignee-picker-item" onclick="event.stopPropagation();pickAssignee(${t.id},null,this.closest('.assignee-picker'))">— Unassigned</div>` +
+                teamMembers.map(u =>
+                    `<div class="assignee-picker-item ${parseInt(u.id)===parseInt(t.assignee_id)?'selected':''}" onclick="event.stopPropagation();pickAssignee(${t.id},${u.id},this.closest('.assignee-picker'))">
+                        <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                        <span>${escapeHtml(u.name)}</span>
+                    </div>`
+                ).join('');
             const ministryOpts = ['Citichamps','Community Bible Study','Events','General','Sunday','Young Adults','Young Couples','Youth']
                 .map(m => `<option value="${m}" ${t.ministry===m?'selected':''}>${m}</option>`).join('');
 
@@ -4185,7 +4239,12 @@
                 <div class="detail-row">
                     <div class="detail-key">Assignee</div>
                     <div class="detail-val">
-                        <select class="inline-select" onchange="quickUpdateTask(${t.id},'assignee_id',this.value);">${assigneeOpts}</select>
+                        <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)" style="max-width:160px;">
+                            ${t.assignee_name
+                                ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.assignee_name)}</span>`
+                                : `<span style="color:var(--text-muted);">Unassigned</span>`}
+                            <div class="assignee-picker-list">${sidebarAssigneeItems}</div>
+                        </div>
                     </div>
                 </div>
                 <div class="detail-row">
@@ -4571,6 +4630,34 @@
         async function pickAssignee(taskId, userId, pickerEl) {
             pickerEl.querySelector('.assignee-picker-list').classList.remove('show');
             await quickUpdateTask(taskId, 'assignee_id', userId);
+        }
+
+        function toggleModalAssigneePicker(el) {
+            const list = el.querySelector('.assignee-picker-list');
+            const isOpen = list.classList.contains('show');
+            document.querySelectorAll('.assignee-picker-list.show').forEach(l => l.classList.remove('show'));
+            if (!isOpen) {
+                // Highlight currently selected item
+                const currentId = document.getElementById('taskAssigneeId').value;
+                list.querySelectorAll('.assignee-picker-item').forEach(item => {
+                    item.classList.toggle('selected', item.dataset.uid === String(currentId));
+                });
+                list.classList.add('show');
+            }
+        }
+
+        function selectModalAssignee(userId, userName) {
+            document.getElementById('taskAssigneeId').value = userId || '';
+            const display = document.getElementById('modalAssigneeDisplay');
+            const list = document.querySelector('#modalAssigneePicker .assignee-picker-list');
+            if (userId && userName) {
+                display.style.color = '';
+                display.innerHTML = `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,var(--accent) 0%,#f97316 100%);flex-shrink:0;">${getInitials(userName)}</div><span>${escapeHtml(userName)}</span>`;
+            } else {
+                display.style.color = 'var(--text-muted)';
+                display.innerHTML = 'Unassigned';
+            }
+            if (list) list.classList.remove('show');
         }
 
         async function quickUpdateTask(id, field, value) {
