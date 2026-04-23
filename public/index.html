@@ -1219,7 +1219,7 @@
 
         .table-header {
             display: grid;
-            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 70px;
+            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 120px 70px;
             gap: 12px;
             padding: 16px 20px;
             background: rgba(39, 39, 42, 0.5);
@@ -1232,7 +1232,7 @@
 
         .task-row {
             display: grid;
-            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 70px;
+            grid-template-columns: 40px 70px 1fr 1fr 100px 90px 110px 120px 70px;
             gap: 12px;
             padding: 16px 20px;
             border-bottom: 1px solid var(--border-light);
@@ -2290,7 +2290,7 @@
                     <div class="task-table">
                         <div class="table-header">
                             <span></span><span>ID</span><span>Task</span><span>Description</span><span>Status</span>
-                            <span>Priority</span><span>Project</span><span></span>
+                            <span>Priority</span><span>Project</span><span>Ministry</span><span></span>
                         </div>
                         <div id="taskList"></div>
                     </div>
@@ -3045,6 +3045,16 @@
                     </select>
                     <select class="inline-select project-select" onchange="quickUpdateTask(${t.id}, 'project_id', this.value)">
                         ${projectOptions || `<option value="${t.project_id}">${escapeHtml(t.project_name)}</option>`}
+                    </select>
+                    <select class="inline-select" onchange="quickUpdateTask(${t.id}, 'ministry', this.value)">
+                        <option value="Citichamps" ${t.ministry === 'Citichamps' ? 'selected' : ''}>Citichamps</option>
+                        <option value="Community Bible Study" ${t.ministry === 'Community Bible Study' ? 'selected' : ''}>Community Bible Study</option>
+                        <option value="Events" ${t.ministry === 'Events' ? 'selected' : ''}>Events</option>
+                        <option value="General" ${(t.ministry === 'General' || !t.ministry) ? 'selected' : ''}>General</option>
+                        <option value="Sunday" ${t.ministry === 'Sunday' ? 'selected' : ''}>Sunday</option>
+                        <option value="Young Adults" ${t.ministry === 'Young Adults' ? 'selected' : ''}>Young Adults</option>
+                        <option value="Young Couples" ${t.ministry === 'Young Couples' ? 'selected' : ''}>Young Couples</option>
+                        <option value="Youth" ${t.ministry === 'Youth' ? 'selected' : ''}>Youth</option>
                     </select>
                     <div class="task-actions">
                         <button class="action-btn" onclick="event.stopPropagation(); editTask(${t.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
