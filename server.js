@@ -769,26 +769,37 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
             const changerResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
             const changerName = changerResult.rows[0]?.name || 'Someone';
 
-            // Notify creator + assignee via in-app always; email only to non-changers
+            const isReassignment = assignee_id !== undefined && String(assignee_id) !== String(task.assignee_id);
+            const oldAssigneeId = task.assignee_id;
+            const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
+
+            // Always include creator + new assignee; also include old assignee on reassignment
             const involvedIds = new Set();
             if (task.creator_id) involvedIds.add(task.creator_id);
-            const newAssigneeId = assignee_id !== undefined ? assignee_id : task.assignee_id;
             if (newAssigneeId) involvedIds.add(newAssigneeId);
+            if (isReassignment && oldAssigneeId) involvedIds.add(oldAssigneeId);
 
             if (involvedIds.size) {
                 const involvedResult = await pool.query(
                     'SELECT id, name, email FROM users WHERE id = ANY($1)',
                     [Array.from(involvedIds)]
                 );
-                const isNewAssignee = assignee_id && String(assignee_id) !== String(task.assignee_id);
                 const changeDesc = changes.map(c => `${c.label}: ${c.value}`).join(', ');
                 for (const u of involvedResult.rows) {
                     const isChanger = String(u.id) === String(req.user.id);
-                    if (isNewAssignee && String(u.id) === String(assignee_id)) {
+                    if (isReassignment && String(u.id) === String(newAssigneeId)) {
+                        // New assignee — assignment notification
                         if (!isChanger) sendAssignmentEmail(u.email, u.name, updatedTask.summary, updatedTask.key, changerName);
                         createNotification(u.id, 'assignment',
                             `${changerName} assigned you to [${updatedTask.key}]: ${updatedTask.summary}`, taskId);
+                    } else if (isReassignment && String(u.id) === String(oldAssigneeId)) {
+                        // Old assignee — unassignment notification
+                        if (!isChanger) sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key,
+                            [{ label: 'Assignee', value: 'You were removed from this task' }]);
+                        createNotification(u.id, 'task_update',
+                            `${changerName} unassigned you from [${updatedTask.key}]: ${updatedTask.summary}`, taskId);
                     } else {
+                        // Creator or other involved user — general update notification
                         if (!isChanger) sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
                         createNotification(u.id, 'task_update',
                             `${changerName} updated [${updatedTask.key}]: ${updatedTask.summary} — ${changeDesc}`, taskId);
