@@ -4204,7 +4204,7 @@
                     await api('/tasks', { method: 'POST', body: JSON.stringify(data) });
                 }
                 closeTaskModal();
-                await Promise.all([loadTasks(), loadStats()]);
+                await Promise.all([loadTasks(), loadStats(), loadNotifications()]);
                 showToast(id ? 'Task updated!' : 'Task created!', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
@@ -4601,7 +4601,7 @@
                     method: 'PUT',
                     body: JSON.stringify({ summary, description })
                 });
-                await Promise.all([loadTasks(), loadStats()]);
+                await Promise.all([loadTasks(), loadStats(), loadNotifications()]);
                 // Refresh displayed text
                 document.getElementById('viewTaskSummary').textContent = summary;
                 document.getElementById('viewTaskDescription').textContent = description || 'No description provided.';
@@ -4637,7 +4637,7 @@
         async function toggleDone(id, status) {
             try {
                 await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify({ status: status === 'done' ? 'todo' : 'done' }) });
-                await Promise.all([loadTasks(), loadStats()]);
+                await Promise.all([loadTasks(), loadStats(), loadNotifications()]);
             } catch (err) {
                 showToast(err.message, 'error');
             }
@@ -4732,7 +4732,7 @@
                     data[field] = value;
                 }
                 await api(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-                await Promise.all([loadTasks(), loadStats()]);
+                await Promise.all([loadTasks(), loadStats(), loadNotifications()]);
                 showToast('Task updated', 'success');
             } catch (err) {
                 showToast(err.message, 'error');
