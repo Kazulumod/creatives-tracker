@@ -3733,6 +3733,9 @@
         // Init App
         async function initApp(user) {
             currentUser = user;
+            // Apply this user's saved theme (falls back to global pref, then dark)
+            const userTheme = localStorage.getItem(`ct_theme_${user.id}`) || localStorage.getItem('ct_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', userTheme);
             updateNavAvatar(user);
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userEmail').textContent = user.email;
@@ -5306,6 +5309,7 @@
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('ct_theme', theme);
+            if (currentUser) localStorage.setItem(`ct_theme_${currentUser.id}`, theme);
             updateThemeButtons();
             closeSettingsModal();
         }
