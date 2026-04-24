@@ -115,7 +115,7 @@ async function sendTaskUpdateEmail(toEmail, toName, changerName, taskSummary, ta
         emailLayout(`
             <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${toName}</strong>,</p>
             <p style="color:#6b7280;margin:4px 0 16px;">
-                <strong>${changerName}</strong> updated a task you're involved in:
+                <strong>${changerName}</strong> updated a task${changerName === 'You' ? ':' : " you're involved in:"}
             </p>
             ${taskCard(taskKey, taskSummary)}
             <table style="width:100%;border-collapse:collapse;margin-top:4px;">${changeRows}</table>
@@ -780,7 +780,8 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                             `${changerName} unassigned you from [${updatedTask.key}]: ${updatedTask.summary}`, taskId);
                     } else {
                         // Creator or other involved user — general update notification
-                        if (!isChanger) sendTaskUpdateEmail(u.email, u.name, changerName, updatedTask.summary, updatedTask.key, changes);
+                        const displayName = isChanger ? 'You' : changerName;
+                        sendTaskUpdateEmail(u.email, u.name, displayName, updatedTask.summary, updatedTask.key, changes);
                         createNotification(u.id, 'task_update',
                             `${changerName} updated [${updatedTask.key}]: ${updatedTask.summary} — ${changeDesc}`, taskId);
                     }
