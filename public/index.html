@@ -2584,6 +2584,23 @@
             outline: 2px dashed rgba(132, 204, 22, 0.5);
             outline-offset: -4px;
         }
+
+        /* Profile Edit Modal */
+        .avatar-preview-lg {
+            width: 80px; height: 80px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; color: white;
+            overflow: hidden; flex-shrink: 0; transition: background 0.2s;
+        }
+        .avatar-preview-lg img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .color-swatch {
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; box-sizing: border-box;
+            transition: border-color 0.15s, transform 0.1s;
+        }
+        .color-swatch:hover { transform: scale(1.12); }
+        .color-swatch.selected { border-color: var(--text-primary); }
+        .user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -2882,6 +2899,13 @@
                             <div class="name" id="userName">John Doe</div>
                             <div class="email" id="userEmail">john@example.com</div>
                         </div>
+                        <button class="user-dropdown-item" onclick="openProfileModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Edit Profile
+                        </button>
                         <button class="user-dropdown-item" onclick="openSettingsModal()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="3"/>
@@ -3178,6 +3202,46 @@
 
     <!-- Global assignee dropdown portal (outside all modals/transforms) -->
     <div id="assigneePortal" class="assignee-picker-list"></div>
+
+    <!-- Profile Edit Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal" style="max-width:440px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Profile</h2>
+                <button class="modal-close" onclick="closeProfileModal()">×</button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:20px;">
+                <!-- Preview -->
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div class="avatar-preview-lg" id="profilePreview"></div>
+                    <div>
+                        <div style="font-weight:600;font-size:var(--font-md);" id="profilePreviewName"></div>
+                        <div style="color:var(--text-muted);font-size:var(--font-sm);" id="profilePreviewEmail"></div>
+                    </div>
+                </div>
+
+                <!-- Color palette -->
+                <div>
+                    <label class="form-label" style="margin-bottom:10px;display:block;">Choose Color</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;" id="colorPalette"></div>
+                </div>
+
+                <!-- Upload photo -->
+                <div>
+                    <label class="form-label" style="margin-bottom:10px;display:block;">Upload Photo</label>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="file" id="profilePhotoInput" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(event)">
+                        <button type="button" class="btn btn-secondary" style="font-size:var(--font-sm);" onclick="document.getElementById('profilePhotoInput').click()">Choose Photo</button>
+                        <button type="button" class="btn btn-secondary" id="removePhotoBtn" style="font-size:var(--font-sm);display:none;" onclick="removeProfilePhoto()">Remove Photo</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeProfileModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveProfileChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Task Detail Modal -->
     <div class="modal-overlay" id="viewModal" onclick="if(event.target===this)closeViewModal()">
@@ -3664,7 +3728,7 @@
         // Init App
         async function initApp(user) {
             currentUser = user;
-            document.getElementById('userAvatar').textContent = getInitials(user.name);
+            updateNavAvatar(user);
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userEmail').textContent = user.email;
 
@@ -3717,7 +3781,7 @@
                     `<div class="assignee-picker-item" onclick="event.stopPropagation();selectModalAssignee(null,'')">— Unassigned</div>` +
                     teamMembers.map(u =>
                         `<div class="assignee-picker-item" onclick="event.stopPropagation();selectModalAssignee(${u.id},${JSON.stringify(u.name)})">
-                            <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,var(--accent) 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                            ${avatarHtml(u, 'sm')}
                             <span>${escapeHtml(u.name)}</span>
                         </div>`
                     ).join('');
@@ -4002,7 +4066,7 @@
                 <div style="padding:0 10px;">
                     <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)" data-task-id="${t.id}" data-assignee-id="${t.assignee_id||''}" data-project-color="${t.project_color||''}">
                         ${t.assignee_name
-                            ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div>
+                            ? `${avatarHtml(findUser(t.assignee_id) || {id:t.assignee_id,name:t.assignee_name}, 'sm')}
                                <span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.assignee_name)}</span>`
                             : `<span style="color:var(--text-muted);">Unassigned</span>`}
                         <div class="assignee-picker-list"></div>
@@ -4038,7 +4102,7 @@
                 </div>
                 <div style="padding:0 10px;" class="assignee-cell">
                     ${t.creator_name
-                        ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);">${getInitials(t.creator_name)}</div>
+                        ? `${avatarHtml(findUser(t.creator_id) || {id:t.creator_id,name:t.creator_name}, 'sm')}
                            <span class="assignee-name-sm">${escapeHtml(t.creator_name)}</span>`
                         : `<span style="font-size:var(--font-base);color:var(--text-muted);">—</span>`}
                 </div>
@@ -4132,8 +4196,8 @@
                 <div class="board-card-footer">
                     <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)" data-task-id="${t.id}" data-assignee-id="${t.assignee_id||''}" data-project-color="${t.project_color||''}" style="padding:3px 22px 3px 4px;">
                         ${t.assignee_name
-                            ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div>`
-                            : `<div class="board-card-avatar" style="opacity:0.5;">${getInitials(currentUser.name)}</div>`}
+                            ? avatarHtml(findUser(t.assignee_id) || {id:t.assignee_id,name:t.assignee_name}, 'sm')
+                            : avatarHtml(currentUser, 'sm').replace('assignee-avatar-sm', 'board-card-avatar').replace('flex-shrink:0;', 'opacity:0.5;flex-shrink:0;')}
                         <div class="assignee-picker-list"></div>
                     </div>
                 </div>
@@ -4264,7 +4328,7 @@
                     <div class="detail-val">
                         <div class="assignee-picker" onclick="event.stopPropagation();toggleAssigneePicker(this)" data-task-id="${t.id}" data-assignee-id="${t.assignee_id||''}" data-project-color="${t.project_color||''}" style="max-width:160px;">
                             ${t.assignee_name
-                                ? `<div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${t.project_color||'var(--accent)'} 0%,#f97316 100%);flex-shrink:0;">${getInitials(t.assignee_name)}</div><span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.assignee_name)}</span>`
+                                ? `${avatarHtml(findUser(t.assignee_id) || {id:t.assignee_id,name:t.assignee_name}, 'sm')}<span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.assignee_name)}</span>`
                                 : `<span style="color:var(--text-muted);">Unassigned</span>`}
                             <div class="assignee-picker-list"></div>
                         </div>
@@ -4274,7 +4338,7 @@
                     <div class="detail-key">Reporter</div>
                     <div class="detail-val" style="display:flex;align-items:center;gap:8px;">
                         ${t.creator_name
-                            ? `<div class="comment-avatar" style="width:24px;height:24px;font-size:var(--font-xs);background:linear-gradient(135deg,#6366f1,#8b5cf6);flex-shrink:0;">${getInitials(t.creator_name)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.creator_name)}</span>`
+                            ? `${avatarHtml(findUser(t.creator_id) || {id:t.creator_id,name:t.creator_name}, 'xs')}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.creator_name)}</span>`
                             : `<span style="color:var(--text-muted);">—</span>`}
                     </div>
                 </div>
@@ -4321,7 +4385,7 @@
                 }
                 list.innerHTML = comments.map(c => `
                     <div class="comment-item">
-                        <div class="comment-avatar" style="background:linear-gradient(135deg,var(--accent),var(--accent-light));">${getInitials(c.user_name||'?')}</div>
+                        ${avatarHtml(findUser(c.user_id) || {id:c.user_id,name:c.user_name||'?'}, 'xs')}
                         <div class="comment-body">
                             <div class="comment-meta">
                                 <span class="comment-author">${escapeHtml(c.user_name||'Unknown')}</span>
@@ -4678,7 +4742,7 @@
                 teamMembers.map(u =>
                     `<div class="assignee-picker-item ${String(u.id)===String(currentAssigneeId)?'selected':''}"
                           data-uid="${u.id}" data-uname="${escapeHtml(u.name)}">
-                        <div class="assignee-avatar-sm" style="background:linear-gradient(135deg,${color} 0%,#f97316 100%);">${getInitials(u.name)}</div>
+                        ${avatarHtml(u, 'sm')}
                         <span>${escapeHtml(u.name)}</span>
                     </div>`
                 ).join('');
@@ -4901,7 +4965,152 @@
         }
 
         function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            if (!name) return '?';
+            return name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase().slice(0, 2) || '?';
+        }
+
+        // ── Avatar helpers ────────────────────────────────────────
+        const AVATAR_PALETTE = [
+            '#6366f1','#8b5cf6','#ec4899','#f43f5e',
+            '#f97316','#eab308','#84cc16','#10b981',
+            '#14b8a6','#06b6d4','#3b82f6','#64748b'
+        ];
+
+        function getDefaultUserColor(id) {
+            return AVATAR_PALETTE[(parseInt(id) || 0) % AVATAR_PALETTE.length];
+        }
+
+        function findUser(id) {
+            return teamMembers.find(u => String(u.id) === String(id)) || null;
+        }
+
+        // Returns an img or initialled div for a user. size: 'sm' (28px) | 'xs' (24px)
+        function avatarHtml(user, size) {
+            if (!user) return '';
+            const initials = getInitials(user.name || '?');
+            const color = user.avatar_color || getDefaultUserColor(user.id);
+            if (user.avatar_url) {
+                const dim = size === 'xs' ? 24 : 28;
+                return `<img src="${escapeHtml(user.avatar_url)}" style="width:${dim}px;height:${dim}px;border-radius:50%;object-fit:cover;flex-shrink:0;">`;
+            }
+            if (size === 'xs') {
+                return `<div class="comment-avatar" style="background:${color};flex-shrink:0;">${initials}</div>`;
+            }
+            return `<div class="assignee-avatar-sm" style="background:${color};flex-shrink:0;">${initials}</div>`;
+        }
+
+        function updateNavAvatar(user) {
+            const el = document.getElementById('userAvatar');
+            if (!el) return;
+            if (user.avatar_url) {
+                el.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                el.style.background = 'transparent';
+            } else {
+                el.innerHTML = getInitials(user.name);
+                el.style.background = user.avatar_color || getDefaultUserColor(user.id);
+            }
+        }
+
+        // ── Profile modal ─────────────────────────────────────────
+        let _profileColor = null;
+        let _profilePhoto = null;
+        let _profileRemovePhoto = false;
+
+        function openProfileModal() {
+            closeUserMenu();
+            _profileColor = currentUser.avatar_color || null;
+            _profilePhoto = null;
+            _profileRemovePhoto = false;
+
+            document.getElementById('profilePreviewName').textContent = currentUser.name;
+            document.getElementById('profilePreviewEmail').textContent = currentUser.email;
+            document.getElementById('removePhotoBtn').style.display = currentUser.avatar_url ? 'inline-flex' : 'none';
+
+            // Build swatch palette
+            const activeColor = currentUser.avatar_color || getDefaultUserColor(currentUser.id);
+            document.getElementById('colorPalette').innerHTML = AVATAR_PALETTE.map(c =>
+                `<div class="color-swatch${c === activeColor ? ' selected' : ''}" style="background:${c};" onclick="selectProfileColor('${c}')"></div>`
+            ).join('');
+
+            _renderProfilePreview();
+            document.getElementById('profileModal').classList.add('show');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('show');
+            document.getElementById('profilePhotoInput').value = '';
+        }
+
+        function _renderProfilePreview() {
+            const el = document.getElementById('profilePreview');
+            const url = _profileRemovePhoto ? null : (_profilePhoto || currentUser.avatar_url);
+            if (url) {
+                el.innerHTML = `<img src="${escapeHtml(url)}">`;
+                el.style.background = 'transparent';
+            } else {
+                const color = _profileColor || getDefaultUserColor(currentUser.id);
+                el.style.background = color;
+                el.innerHTML = `<span>${getInitials(currentUser.name)}</span>`;
+            }
+        }
+
+        function selectProfileColor(color) {
+            _profileColor = color;
+            _profilePhoto = null;
+            _profileRemovePhoto = true;
+            document.getElementById('profilePhotoInput').value = '';
+            document.getElementById('removePhotoBtn').style.display = 'none';
+            document.querySelectorAll('#colorPalette .color-swatch').forEach(el => {
+                el.classList.toggle('selected', el.style.background === color);
+            });
+            _renderProfilePreview();
+        }
+
+        function handleProfilePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { showToast('Photo must be under 2MB', 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                _profilePhoto = ev.target.result;
+                _profileColor = null;
+                _profileRemovePhoto = false;
+                document.querySelectorAll('#colorPalette .color-swatch').forEach(el => el.classList.remove('selected'));
+                document.getElementById('removePhotoBtn').style.display = 'inline-flex';
+                _renderProfilePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeProfilePhoto() {
+            _profilePhoto = null;
+            _profileRemovePhoto = true;
+            document.getElementById('profilePhotoInput').value = '';
+            document.getElementById('removePhotoBtn').style.display = 'none';
+            _renderProfilePreview();
+        }
+
+        async function saveProfileChanges() {
+            const body = {};
+            if (_profilePhoto) {
+                body.avatar_url = _profilePhoto;
+                body.avatar_color = null;
+            } else if (_profileRemovePhoto) {
+                body.avatar_url = null;
+                if (_profileColor) body.avatar_color = _profileColor;
+            } else if (_profileColor && _profileColor !== (currentUser.avatar_color || null)) {
+                body.avatar_color = _profileColor;
+            }
+            if (!Object.keys(body).length) { closeProfileModal(); return; }
+            try {
+                const updated = await api('/users/profile', { method: 'PUT', body: JSON.stringify(body) });
+                currentUser = { ...currentUser, ...updated };
+                updateNavAvatar(currentUser);
+                await loadTeamMembers();
+                renderTasks();
+                closeProfileModal();
+                showToast('Profile updated', 'success');
+            } catch(err) { showToast(err.message, 'error'); }
         }
 
         function escapeHtml(text) {

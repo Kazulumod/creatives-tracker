@@ -245,6 +245,18 @@ async function initDatabase() {
         await client.query(`UPDATE users SET is_admin = TRUE WHERE email IN ('audrey.john@pray.com', 'kazulumod@gmail.com')`);
 
         await client.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar_color') THEN
+                    ALTER TABLE users ADD COLUMN avatar_color TEXT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar_url') THEN
+                    ALTER TABLE users ADD COLUMN avatar_url TEXT;
+                END IF;
+            END $$;
+        `);
+
+        await client.query(`
             CREATE TABLE IF NOT EXISTS comments (
                 id SERIAL PRIMARY KEY,
                 task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
@@ -386,7 +398,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Get current user
 app.get('/api/auth/me', authenticate, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, email, is_admin, created_at FROM users WHERE id = $1', [req.user.id]);
+        const result = await pool.query('SELECT id, name, email, is_admin, avatar_color, avatar_url, created_at FROM users WHERE id = $1', [req.user.id]);
         const user = result.rows[0];
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -694,6 +706,7 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
         const task = taskCheck.rows[0];
 
         let newProjectId = task.project_id;
+        let newKey = task.key;
         if (project_id && parseInt(project_id) !== task.project_id) {
             const newProjCheck = await pool.query(
                 'SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2',
@@ -703,6 +716,17 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                 return res.status(403).json({ error: 'You are not a member of the target project' });
             }
             newProjectId = parseInt(project_id);
+            // Generate a new key for the new project
+            const newProjResult = await pool.query('SELECT name FROM projects WHERE id = $1', [newProjectId]);
+            if (newProjResult.rows[0]) {
+                const newPrefix = newProjResult.rows[0].name.substring(0, 3).toUpperCase();
+                const counterResult = await pool.query(
+                    'UPDATE task_counter SET counter = counter + 1 WHERE project_id = $1 RETURNING counter',
+                    [newProjectId]
+                );
+                const newCounter = counterResult.rows[0]?.counter || 1;
+                newKey = `${newPrefix}-${newCounter}`;
+            }
         }
 
         await pool.query(`
@@ -715,8 +739,9 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
                 assignee_id = $6,
                 due_date = $7,
                 project_id = $8,
+                key = $9,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $9
+            WHERE id = $10
         `, [
             summary,
             description,
@@ -726,6 +751,7 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
             assignee_id !== undefined ? assignee_id : task.assignee_id,
             due_date !== undefined ? due_date : task.due_date,
             newProjectId,
+            newKey,
             taskId
         ]);
 
@@ -996,8 +1022,29 @@ app.get('/api/users/search', authenticate, async (req, res) => {
 // Get all team members (for dropdowns)
 app.get('/api/users/all', authenticate, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, email FROM users ORDER BY name ASC');
+        const result = await pool.query('SELECT id, name, email, avatar_color, avatar_url FROM users ORDER BY name ASC');
         res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Update profile (avatar color / photo)
+app.put('/api/users/profile', authenticate, async (req, res) => {
+    try {
+        const { avatar_color, avatar_url } = req.body;
+        const fields = [];
+        const params = [];
+        let i = 1;
+        if (avatar_color !== undefined) { fields.push(`avatar_color = $${i++}`); params.push(avatar_color); }
+        if (avatar_url !== undefined)   { fields.push(`avatar_url   = $${i++}`); params.push(avatar_url); }
+        if (!fields.length) return res.status(400).json({ error: 'Nothing to update' });
+        params.push(req.user.id);
+        const result = await pool.query(
+            `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, name, email, is_admin, avatar_color, avatar_url`,
+            params
+        );
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
