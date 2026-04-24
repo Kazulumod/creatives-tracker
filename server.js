@@ -912,7 +912,26 @@ app.put('/api/admin/users/:id/toggle-admin', authenticate, isAdmin, async (req, 
             'UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING id, name, email, is_admin',
             [userId]
         );
-        res.json(result.rows[0]);
+        const updated = result.rows[0];
+        if (updated.is_admin) {
+            sendEmail(updated.email, updated.name,
+                'You have been granted Admin access — Creatives Tracker',
+                emailLayout(`
+                    <p style="color:#374151;font-size:16px;margin:0 0 4px;">Hi <strong>${updated.name}</strong>,</p>
+                    <p style="color:#6b7280;margin:4px 0 16px;">
+                        Your account on <strong>Creatives Tracker</strong> has been upgraded to
+                        <strong style="color:#84cc16;">Admin</strong>. You can now manage workspaces,
+                        users, and team settings.
+                    </p>
+                    <div style="background:#fff;border-left:4px solid #84cc16;padding:14px 18px;
+                                border-radius:4px;border:1px solid #e5e7eb;color:#374151;font-size:14px;">
+                        Admin privileges let you create workspaces, promote or remove users,
+                        and view team-wide statistics.
+                    </div>
+                `)
+            );
+        }
+        res.json(updated);
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
