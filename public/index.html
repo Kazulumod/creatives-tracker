@@ -3067,6 +3067,17 @@
                         <select id="userFilter">
                             <option value="all">All Users</option>
                         </select>
+                        <select id="ministryFilter">
+                            <option value="all">All Ministries</option>
+                            <option value="Citichamps">Citichamps</option>
+                            <option value="Community Bible Study">Community Bible Study</option>
+                            <option value="Events">Events</option>
+                            <option value="General">General</option>
+                            <option value="Sunday">Sunday</option>
+                            <option value="Young Adults">Young Adults</option>
+                            <option value="Young Couples">Young Couples</option>
+                            <option value="Youth">Youth</option>
+                        </select>
                     </div>
                     <div class="view-toggle">
                         <button id="listViewBtn" onclick="setView('list')">
@@ -3478,7 +3489,7 @@
         let currentView = 'board';
         let currentViewTaskId = null;
         let currentEditTaskId = null;  // Track task being edited
-        let currentFilters = { status: 'all', priority: 'all', project: 'all', user: 'all', search: '' };
+        let currentFilters = { status: 'all', priority: 'all', project: 'all', user: 'all', ministry: 'all', search: '' };
         let notifications = [];
         let notifPollInterval = null;
 
@@ -4012,6 +4023,9 @@
             let filtered = tasks;
             if (currentFilters.user !== 'all') {
                 filtered = filtered.filter(t => String(t.assignee_id) === String(currentFilters.user));
+            }
+            if (currentFilters.ministry !== 'all') {
+                filtered = filtered.filter(t => t.ministry === currentFilters.ministry);
             }
             if (currentFilters.search) {
                 const s = currentFilters.search.toLowerCase();
@@ -4852,6 +4866,7 @@
         document.getElementById('statusFilter').addEventListener('change', e => { currentFilters.status = e.target.value; loadTasks(); });
         document.getElementById('priorityFilter').addEventListener('change', e => { currentFilters.priority = e.target.value; loadTasks(); });
         document.getElementById('userFilter').addEventListener('change', e => { currentFilters.user = e.target.value; renderTasks(); });
+        document.getElementById('ministryFilter').addEventListener('change', e => { currentFilters.ministry = e.target.value; renderTasks(); });
         document.getElementById('projectFilter').addEventListener('change', e => {
             currentFilters.project = e.target.value;
             // Clear workspace highlight when "All Projects" is selected from dropdown
