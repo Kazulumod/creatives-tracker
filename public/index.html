@@ -3064,6 +3064,9 @@
                         <select id="projectFilter">
                             <option value="all">All Projects</option>
                         </select>
+                        <select id="userFilter">
+                            <option value="all">All Users</option>
+                        </select>
                     </div>
                     <div class="view-toggle">
                         <button id="listViewBtn" onclick="setView('list')">
@@ -3475,7 +3478,7 @@
         let currentView = 'board';
         let currentViewTaskId = null;
         let currentEditTaskId = null;  // Track task being edited
-        let currentFilters = { status: 'all', priority: 'all', project: 'all', search: '' };
+        let currentFilters = { status: 'all', priority: 'all', project: 'all', user: 'all', search: '' };
         let notifications = [];
         let notifPollInterval = null;
 
@@ -3776,6 +3779,15 @@
             projectAssignee.innerHTML = '<option value="">Select team member (optional)</option>' + optionsNameOnly;
             inviteSelect.innerHTML = '<option value="">Select a team member</option>' + optionsWithEmail;
 
+            // Populate user filter dropdown
+            const userFilter = document.getElementById('userFilter');
+            if (userFilter) {
+                const current = userFilter.value;
+                userFilter.innerHTML = '<option value="all">All Users</option>' +
+                    teamMembers.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+                userFilter.value = teamMembers.find(u => String(u.id) === current) ? current : 'all';
+            }
+
             // Populate modal assignee picker list
             const modalPickerList = document.querySelector('#modalAssigneePicker .assignee-picker-list');
             if (modalPickerList) {
@@ -3995,6 +4007,9 @@
 
         function renderTasks() {
             let filtered = tasks;
+            if (currentFilters.user !== 'all') {
+                filtered = filtered.filter(t => String(t.assignee_id) === String(currentFilters.user));
+            }
             if (currentFilters.search) {
                 const s = currentFilters.search.toLowerCase();
                 filtered = filtered.filter(t => t.summary.toLowerCase().includes(s) || t.key.toLowerCase().includes(s));
@@ -4834,6 +4849,7 @@
 
         document.getElementById('statusFilter').addEventListener('change', e => { currentFilters.status = e.target.value; loadTasks(); });
         document.getElementById('priorityFilter').addEventListener('change', e => { currentFilters.priority = e.target.value; loadTasks(); });
+        document.getElementById('userFilter').addEventListener('change', e => { currentFilters.user = e.target.value; renderTasks(); });
         document.getElementById('projectFilter').addEventListener('change', e => {
             currentFilters.project = e.target.value;
             // Clear workspace highlight when "All Projects" is selected from dropdown
